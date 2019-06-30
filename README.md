@@ -12,6 +12,18 @@ mathematical objects. Each of these files begin with a detailed summary and...
 
 (here, zeroth-order logic is a synonym of propositional logic)
 
+Generic math objects:
+
+| Object                             | TLDR;                                                     | Where?                     |
+| ---------------------------------- |:--------------------------------------------------------: | -------------------------- |
+| Set                                | Standard sets & many type traits used across all sets     | set.hh        |
+| Fuzzy set                          | Discrete fuzzy sets                                       | fuzzy_set.hh                     |
+| Fuzzy partition                    | Function to generate continuous fuzzy sets to partition an input space | fuzzy_partitions.hh     |
+| Rough set                          | Rough sets                                                | rough_set.hh                |
+| Graph                              | Extremely generic type traits and functions for standard and fuzzy graphs | graph.hh                |
+
+Logics:
+
 | Language                           | Logic         | Epistemology                              | Where?                     |
 | ---------------------------------- |:-------------:| :---------------------------------------: | -------------------------- |
 | Fuzzy rule-based classifier        | Zeroth-order  | Many-valued                               | fuzzy_classifier.hh        |
