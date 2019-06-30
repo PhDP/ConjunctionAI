@@ -1,7 +1,7 @@
 #ifndef CJ_SET_HH_
 #define CJ_SET_HH_
 
-#include "cj/common.hh"
+#include "cj/details/common.hh"
 
 namespace cj {
 

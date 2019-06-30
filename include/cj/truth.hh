@@ -6,7 +6,7 @@
 #define CJ_TRUTH_HH_
 
 #include <iostream>
-#include "cj/common.hh"
+#include "cj/details/common.hh"
 
 namespace cj {
 

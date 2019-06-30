@@ -4,7 +4,7 @@
 #ifndef CJ_FUZZY_PARTITION_HH_
 #define CJ_FUZZY_PARTITION_HH_
 
-#include "cj/common.hh"
+#include "cj/details/common.hh"
 
 namespace cj {
 

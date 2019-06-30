@@ -12,7 +12,7 @@
 #ifndef CJ_FUZZY_CLASSIFIER_HH_
 #define CJ_FUZZY_CLASSIFIER_HH_
 
-#include "cj/common.hh"
+#include "cj/details/common.hh"
 #include "cj/fuzzy_partition.hh"
 #include "cj/math/confusion.hh"
 #include "cj/data/datamatrix.hh"

@@ -7,10 +7,9 @@ ConjunctionAI is a C++17 library with a Python package.
 
 ## Code organization
 
-Except for *common.hh*, all files directly in *include/cj* represent different systems, languages,
-mathematical objects. Each of these files begin with a detailed summary and...
-
-(here, zeroth-order logic is a synonym of propositional logic)
+All files directly in *include/cj* represent different mathematical objects or logics. Each of
+these files begin with a detailed summary and list of classes/functions, followed by, of course,
+the code for these classes/functions.
 
 Generic math objects:
 
@@ -22,7 +21,7 @@ Generic math objects:
 | Rough set                          | Rough sets                                                | rough_set.hh                |
 | Graph                              | Extremely generic type traits and functions for standard and fuzzy graphs | graph.hh                |
 
-Logics:
+Logics (here, zeroth-order logic is a synonym of propositional logic):
 
 | Language                           | Logic         | Epistemology                              | Where?                     |
 | ---------------------------------- |:-------------:| ----------------------------------------- | -------------------------- |

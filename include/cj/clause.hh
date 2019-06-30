@@ -5,7 +5,7 @@
 #ifndef CJ_CLAUSE_HH_
 #define CJ_CLAUSE_HH_
 
-#include "cj/common.hh"
+#include "cj/details/common.hh"
 #include "cj/utils/string.hh"
 
 namespace cj {

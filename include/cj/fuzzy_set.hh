@@ -4,7 +4,7 @@
 #ifndef CJ_FUZZY_SET_HH_
 #define CJ_FUZZY_SET_HH_
 
-#include "cj/common.hh"
+#include "cj/details/common.hh"
 
 namespace cj {
 
@@ -22,7 +22,7 @@ namespace cj {
     using membership_type = Membership;
     using fuzzy_set_type = MapType<element_type, membership_type>;
     using const_iterator = typename fuzzy_set_type::const_iterator;
- 
+
     /**
      * \brief Builds a function with a name and a list of arguments.
      */
@@ -69,7 +69,7 @@ namespace cj {
     auto cardinality() const -> membership_type {
       return std::accumulate(m_set.begin(), m_set.end(), membership_type{0});
     }
-    
+
     auto begin() -> const_iterator {
       return m_set.begin();
     }
