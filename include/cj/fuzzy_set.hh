@@ -9,10 +9,7 @@
 namespace cj {
 
   /**
-   * \brief A function as a name and a vector of terms.
-   *
-   * \tparam Term   Type of the term inside the function.
-   * \tparam Name   Type of the function's name (default: string).
+   * \brief A class for discrete fuzzy sets.
    */
   template<
     typename T,
@@ -25,7 +22,7 @@ namespace cj {
     using membership_type = Membership;
     using fuzzy_set_type = MapType<element_type, membership_type>;
     using const_iterator = typename fuzzy_set_type::const_iterator;
-
+ 
     /**
      * \brief Builds a function with a name and a list of arguments.
      */
@@ -33,10 +30,20 @@ namespace cj {
       : m_set{} {
     }
 
-    auto insert() {
+    auto empty() -> bool {
+      return m_set.empty();
     }
 
-    auto remove() {
+    auto size() -> size_t {
+      return m_set.size();
+    }
+
+    auto insert(element_type const& e, membership_type m) -> void {
+      m_set[e] = m;
+    }
+
+    auto remove(element_type const& e) -> void {
+      m_set.erase(e);
     }
 
     auto membership(T const& t) const -> membership_type {
@@ -49,20 +56,34 @@ namespace cj {
       return it != m_set.end()? it->second : membership_type{0};
     }
 
-    auto cardinality() const -> membership_type {
-      auto c = membership_type{0};
-      for (auto const& elem : m_set) {
-        c += elem.second;
+    auto highest() const -> membership_type {
+      auto m = membership_type{0};
+      for (auto const& e : m_set) {
+        if (e.second > m) {
+          m = e.second;
+        }
       }
-      return c;
+      return m;
+    }
+
+    auto cardinality() const -> membership_type {
+      return std::accumulate(m_set.begin(), m_set.end(), membership_type{0});
+    }
+    
+    auto begin() -> const_iterator {
+      return m_set.begin();
+    }
+
+    auto end() -> const_iterator {
+      return m_set.end();
     }
 
    private:
     fuzzy_set_type m_set;
   };
 
-  template<typename T, typename Membership, template<typename, typename...> typename MapType>
-  auto operator<<(std::ostream& os, fuzzy_set<T, Membership, MapType> const& f) -> std::ostream& {
+  template<typename T, typename M, template<typename, typename...> typename MT>
+  auto operator<<(std::ostream& os, fuzzy_set<T, M, MT> const& f) -> std::ostream& {
     os << '{';
     if (!f.empty()) {
       auto it = f.begin();

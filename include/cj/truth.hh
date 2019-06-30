@@ -238,4 +238,29 @@ namespace cj {
 
 } /* end namespace cj */
 
+namespace std {
+
+  template<typename Float>
+  struct hash<cj::lukasiewicz<Float>> {
+    auto operator()(cj::lukasiewicz<Float> const& f) const -> size_t {
+      return hash<Float>{l.value};
+    }
+  };
+
+  template<typename Float>
+  struct hash<cj::godel<Float>> {
+    auto operator()(cj::godel<Float> const& f) const -> size_t {
+      return hash<Float>{l.value};
+    }
+  };
+
+  template<typename Float>
+  struct hash<cj::product<Float>> {
+    auto operator()(cj::product<Float> const& f) const -> size_t {
+      return hash<Float>{l.value};
+    }
+  };
+
+} /* end namespace std */
+
 #endif

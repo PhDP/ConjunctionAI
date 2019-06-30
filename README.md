@@ -1,43 +1,46 @@
-<img src='http://phdp.github.io/images/cj.svg.png' alt='Conjunction logo' align='right'/>
+<img src='http://phdp.github.io/images/cj-200.png' alt='Conjunction logo' align='right'/>
 
 > **ConjunctionAI is an AI library to explore what lies at the intersection of logic, fuzziness, and
 probability theory.**
 
-ConjunctionAI is a C++17 library with a Python package (maybe an R package someday?).
+ConjunctionAI is a C++17 library with a Python package.
 
-## Languages
+## Code organization
+
+Except for *common.hh*, all files directly in *include/cj* represent different systems, languages,
+mathematical objects. Each of these files begin with a detailed summary and...
 
 (here, zeroth-order logic is a synonym of propositional logic)
 
-| Language                           | Logic         | Epistemology                              | Where?                        |
-| ---------------------------------- |:-------------:| :---------------------------------------: | ----------------------------- |
-| Fuzzy rule-based classifier        | Zeroth-order  | Many-valued                               | cj/fuzzy_classifier.hh        |
-| First-order logic                  | First-order   | Bivalent or Many-Valued                   | cj/fol.hh                     |
-| Hybrid Markov logic                | First-order   | Probabilistic + Many-valued-ish :star2:   | cj/hybrid_markov_logic.hh     |
-| System F                           | Higher-order  | Bivalent                                  | cj/system_f.hh                |
+| Language                           | Logic         | Epistemology                              | Where?                     |
+| ---------------------------------- |:-------------:| :---------------------------------------: | -------------------------- |
+| Fuzzy rule-based classifier        | Zeroth-order  | Many-valued                               | fuzzy_classifier.hh        |
+| First-order logic                  | First-order   | Bivalent or Many-Valued                   | fol.hh                     |
+| Hybrid Markov logic                | First-order   | Probabilistic + Many-valued-ish :star2:   | hybrid_markov_logic.hh     |
+| System F                           | Higher-order  | Bivalent                                  | system_f.hh                |
 
 :star2: Hybrid Markov logic supports soft equalities, soft inequalities and similarly 'soft'
 predicates.
 
 ## Dependencies
-[![Build status](https://travis-ci.org/PhDP/GryffonAI.svg?branch=master)](https://travis-ci.org/PhDP/GryffonAI)
+[![Build status](https://travis-ci.org/PhDP/ConjunctionAI.svg?branch=master)](https://travis-ci.org/PhDP/ConjunctionAI)
 
 The hard dependencies outside a C++17-compliant compiler are:
 
 * [cmake](https://cmake.org/) for building the library, tests, benchmarks, examples.
 * [boost](https://www.boost.org/) for lots of things (flat containers, math functions...).
-* [eigen3](http://eigen.tuxfamily.org) for linear algebra.
+* [eigen3](http://eigen.tuxfamily.org/) for linear algebra.
 * [ceres solver](http://ceres-solver.org/) for non-linear optimization (which is also using eigen).
 
 For convenience, some libraries are included directly in the repository or using git submodule:
 
 * [catch2](https://github.com/catchorg/Catch2/) is included directly in the 'test' folder.
-* [google benchmark](https://github.com/google/benchmark) is a git submodule used for benchmarks (duh!).
-* [pybind11](https://github.com/pybind/pybind11) is a git submodule used to build the Python3 package.
+* [google benchmark](https://github.com/google/benchmark/) is a git submodule used for benchmarks (duh!).
+* [pybind11](https://github.com/pybind/pybind11/) is a git submodule used to build the Python3 package.
 
 Use the '--recursive' option with git to fetch the two submodules, e.g.:
 
-    $ git clone --recursive https://github.com/PhDP/GryffonAI.git
+    $ git clone --recursive https://github.com/PhDP/ConjunctionAI.git
 
 ## Installing dependencies
 
