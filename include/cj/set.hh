@@ -1,3 +1,23 @@
+/**
+ * # Summary
+ *
+ * # Type traits
+ *
+ * **map_trait**:
+ * **set_trait**:
+ * **is_ordered_set**:
+ *
+ * # Functions
+ *
+ * The function are specialized for ordered and unordered sets:
+ *
+ * set_union(SET const&, SET const&) -> SET;
+ * set_intersection(SET const&, SET const&) -> SET;
+ * set_difference(SET const&, SET const&) -> SET;
+ * set_union_size(SET const&, SET const&) -> size_t;
+ * ...
+ *
+ */
 #ifndef CJ_SET_HH_
 #define CJ_SET_HH_
 
@@ -6,20 +26,20 @@
 namespace cj {
 
   template<typename Container>
-  struct map_traits;
+  struct map_trait;
 
   template<typename Key, typename Value>
-  struct map_traits<flat_map<Key, Value>> {
+  struct map_trait<flat_map<Key, Value>> {
     using set_type = flat_set<Key>;
   };
 
   template<typename Key, typename Value>
-  struct map_traits<ordered_map<Key, Value>> {
+  struct map_trait<ordered_map<Key, Value>> {
     using set_type = ordered_set<Key>;
   };
 
   template<typename Key, typename Value>
-  struct map_traits<unordered_map<Key, Value>> {
+  struct map_trait<unordered_map<Key, Value>> {
     using set_type = unordered_set<Key>;
   };
 

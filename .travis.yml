@@ -25,9 +25,9 @@ install:
   - sudo apt-get install -qq g++
   - if [ "$CXX" == "clang++" ]; then sudo apt-get install -qq clang libc++-dev libc++abi-dev; fi
   - if [ "$CXX" == "clang++" ]; then export CXX="clang++"; fi
-  - CMAKE_V=3.7.1
+  - CMAKE_V=3.14.5
   - CMAKE_SV=${CMAKE_V::-2}
-  - BOOST_V=1.62.0
+  - BOOST_V=1.70.0
   - # Get and install CMake
   - wget https://cmake.org/files/v${CMAKE_SV}/cmake-${CMAKE_V}.tar.gz
   - tar xf cmake-${CMAKE_V}.tar.gz
@@ -51,8 +51,5 @@ script:
   - $CXX --version
   - cmake --version
   - mkdir -p build && cd build
-  - cmake .. -DCMAKE_BUILD_TYPE=${BUILD} -DBOOST_ROOT="$BOOST"
-  - make
-  - ./test/test_nemo
-  - ./bench/bench_nemo
-
+  - cmake .. -DCMAKE_BUILD_TYPE=${BUILD} -DCJ_TEST=ON -DBOOST_ROOT="$BOOST"
+  - make && ./test/test_cj

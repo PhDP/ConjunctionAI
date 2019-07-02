@@ -1,6 +1,16 @@
 /**
- * \file   clause.hh
- * \brief  A flexible class for logic clauses.
+ * Summary
+ * -------
+ * Generic classes for clauses and clausal knowledge bases. Many algorithms in first-order logic
+ * begin with converting the formulas into their disjunctive or conjunctive normal forms (DNF, CNF).
+ *
+ * Types
+ * -------
+ * **clause**
+ * **clausal_kb**
+ * **weighted_clausal_kb**
+ * **clause_kind**
+ *
  */
 #ifndef CJ_CLAUSE_HH_
 #define CJ_CLAUSE_HH_
@@ -225,14 +235,6 @@ namespace cj {
     return os;
   }
 
-  template<typename T, template<typename...> class S>
-  inline auto hash_value(clause<T, S> const& c) -> size_t {
-    size_t seed = 977368807307959276;
-    boost::hash_range(seed, c.head_begin(), c.head_end());
-    boost::hash_range(seed, c.body_begin(), c.body_end());
-    return seed;
-  }
-
   enum class clause_kind {
     dnf,
     cnf
@@ -256,6 +258,8 @@ namespace cj {
 
     auto size() const -> size_t;
 
+    auto kind() const -> clause_kind { return m_kind; }
+
     auto tell(formula const& f, weight_type weight = std::numeric_limits<double>::infinity()) -> void;
 
     auto tell(clause_type const& f, weight_type weight = std::numeric_limits<double>::infinity()) -> void;
@@ -278,7 +282,11 @@ namespace std {
   template<typename T, template<typename...> class S>
   struct hash<cj::clause<T, S>> {
     auto operator()(cj::clause<T, S> const& c) const -> size_t {
-      return cj::hash_value(c);
+      size_t seed = 977368807307959276;
+      cj::std_hash_range(seed, c.head_begin(), c.head_end());
+      cj::std_hash_range(seed, c.body_begin(), c.body_end());
+      cj::std_hash_combine(seed, c.kind());
+      return seed;
     }
   };
 
