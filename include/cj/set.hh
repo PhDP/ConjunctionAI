@@ -9,13 +9,16 @@
  *
  * # Functions
  *
- * The function are specialized for ordered and unordered sets:
+ * Each function have specialization for ordered and unordered sets:
  *
  * set_union(SET const&, SET const&) -> SET;
  * set_intersection(SET const&, SET const&) -> SET;
  * set_difference(SET const&, SET const&) -> SET;
  * set_union_size(SET const&, SET const&) -> size_t;
- * ...
+ * set_intersection_size(SET const&, SET const&) -> size_t;
+ * set_empty_intersection(SET const&, SET const&) -> size_t;
+ * tanimoto() -> size_t;
+ * tanomoto_distance() -> size_t;
  *
  */
 #ifndef CJ_SET_HH_

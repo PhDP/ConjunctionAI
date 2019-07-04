@@ -14,7 +14,6 @@ add_executable(test_cj ${test_src})
 target_link_libraries(test_cj
   gtest
   ${libs_to_link}
-  ${CJ_LIB_NAME}
   ${CMAKE_THREAD_LIBS_INIT}
   ${MATH_LIBS}
 )

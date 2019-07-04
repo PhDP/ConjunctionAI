@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: xenial
 
 language:
   - cpp
@@ -12,23 +12,18 @@ matrix:
     - env: BUILD=RELEASE
       compiler: gcc
 
-    - env: BUILD=DEBUG
-      compiler: clang
-
-    - env: BUILD=RELEASE
-      compiler: clang
-
 before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update -qq
 
 install:
-  - sudo apt-get install -qq g++
-  - if [ "$CXX" == "clang++" ]; then sudo apt-get install -qq clang libc++-dev libc++abi-dev; fi
-  - if [ "$CXX" == "clang++" ]; then export CXX="clang++"; fi
+  - sudo apt-get install -qq g++-8
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
+  - # cmake/boost versions:
   - CMAKE_V=3.14.5
   - CMAKE_SV=${CMAKE_V::-2}
   - BOOST_V=1.70.0
-  - # Get and install CMake
+  - # Get and install cmake:
   - wget https://cmake.org/files/v${CMAKE_SV}/cmake-${CMAKE_V}.tar.gz
   - tar xf cmake-${CMAKE_V}.tar.gz
   - cd cmake-${CMAKE_V}
@@ -36,7 +31,7 @@ install:
   - make
   - sudo make install
   - cd ..
-  - # Get and install Boost
+  - # Get and install boost:
   - PROJECT_DIR=`pwd`
   - BOOST=$HOME/boost
   - git clone --depth 1 -b boost-$BOOST_V https://github.com/boostorg/boost.git $BOOST

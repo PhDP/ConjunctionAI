@@ -1,13 +1,16 @@
 /**
- * \file   data_matrix.hh
- * \brief  A simple row-based class to store data as a matrix of a single type (without missing values).
+ * # Summary
+ *
+ * A simple row-based class for supervised learning. It stores data as a vector of rows (without
+ * missing values), with each row being represented by a vector along with its output (of
+ * potentially a different type).
+ *
  */
 #ifndef CJ_DATA_DATA_MATRIX_HH_
 #define CJ_DATA_DATA_MATRIX_HH_
 
 #include <iostream>
 #include <sstream>
-#include <boost/lexical_cast.hpp>
 #include "cj/common.hh"
 #include "cj/utils/string.hh"
 #include "cj/math/random.hh"
@@ -17,11 +20,12 @@ namespace cj {
   /**
    * \brief A data_matrix is a vector of rows, each also represented as vectors of data, along with a vector of names (the headers).
    */
-  template<typename Value>
+  template<typename Input, typename Output>
   class data_matrix {
    public:
-    using value_type = Value;
-    using row_type = vector<value_type>;
+    using input_type = Input;
+    using output_type = Output;
+    using row_type = pair<vector<input_type>, output_type>;
     using data_matrix_type = vector<row_type>;
     using const_iterator = typename data_matrix_type::const_iterator;
 
@@ -34,7 +38,7 @@ namespace cj {
     }
 
     /**
-     * \brief Returns the number of columns.
+     * \brief Returns the number of columns (counting the output).
      */
     auto ncols() const noexcept -> size_t {
       return m_headers.size();
@@ -48,10 +52,10 @@ namespace cj {
     }
 
     /**
-     * \brief Returns the total number of entries (number of columns * number of rows).
+     * \brief Returns the number of rows.
      */
     auto size() const noexcept -> size_t {
-      return ncols() * nrows();
+      return m_dm.size();
     }
 
     /**
@@ -62,10 +66,10 @@ namespace cj {
     }
 
     /**
-     * \brief Add a row of data (if it is the right size). Returns whether the row could be added.
+     * \brief Adds a row of data (if it is the right size). Returns whether the row could be added.
      */
     auto add_row(row_type const& new_row) noexcept -> bool {
-      if (new_row.size() == m_headers.size()) {
+      if (new_row.first.size() + 1 == m_headers.size()) {
         m_dm.push_back(new_row);
         return true;
       }
@@ -86,6 +90,13 @@ namespace cj {
       return m_headers.at(n);
     }
 
+    auto output_name() const noexcept -> string const& {
+      return m_headers.back();
+    }
+
+    /**
+     * \brief Reserves memory for a number of rows.
+     */
     auto reserve(size_t n) -> void {
       m_dm.reserve(n);
     }
@@ -93,8 +104,8 @@ namespace cj {
     /**
      * \brief Returns an empty vector if the name of the col is invalid.
      */
-    auto extract_column(string const& col) const noexcept -> vector<value_type> {
-      auto c = vector<value_type>{};
+    auto extract_column(string const& col) const noexcept -> vector<input_type> {
+      auto c = vector<input_type>{};
       auto const it = m_str_to_idx.find(col);
       if (it == m_str_to_idx.end()) {
         return c;
@@ -107,6 +118,10 @@ namespace cj {
       return c;
     }
 
+    auto get_output(size_t row) const -> output_type {
+      return m_dm.at(row).second;
+    }
+
     /**
      * \brief Returns a reference to a row.
      */
@@ -117,22 +132,22 @@ namespace cj {
     /**
      * \brief Returns a value for a given row and column.
      */
-    auto operator()(size_t row, size_t col) const -> value_type {
-      return m_dm.at(row).at(col);
+    auto operator()(size_t row, size_t col) const -> input_type {
+      return m_dm.at(row).first.at(col);
     }
 
     /**
      * \brief Returns a value for a given row and column using the header's name for the column.
      */
-    auto operator()(size_t row, string const& col) const -> value_type {
-      return m_dm.at(row).at(m_str_to_idx.at(col));
+    auto operator()(size_t row, string const& col) const -> input_type {
+      return m_dm.at(row).first.at(m_str_to_idx.at(col));
     }
 
     /**
      * \brief Split x% of the current data_matrix into a new data_matrix.
      */
-    auto split_frame(double prop, std::mt19937_64 &rng) -> data_matrix<value_type> {
-      auto new_df = data_matrix<value_type>(m_headers);
+    auto split_frame(double prop, std::mt19937_64 &rng) -> data_matrix<input_type, output_type> {
+      auto new_df = data_matrix<input_type, output_type>(m_headers);
       size_t const n = prop * nrows();
       auto const indexes = unique_integers<size_t>(n, size_t(0), nrows(), rng);
       for (auto const i : indexes) {
@@ -147,7 +162,7 @@ namespace cj {
     /**
      * \brief Split x% of the current data_matrix into a new data_matrix.
      */
-    auto split_frame(double prop, size_t seed) -> data_matrix<value_type> {
+    auto split_frame(double prop, size_t seed) -> data_matrix<input_type, output_type> {
       auto rng = std::mt19937_64(seed);
       return split_frame(prop, rng);
     }
@@ -167,6 +182,11 @@ namespace cj {
     }
 
     /**
+     * \brief Constructs a data_matrix from a file.
+     */
+    static auto from_file(char const* filename, char delim = ',') -> std::optional<data_matrix<input_type, output_type>>;
+
+    /**
      * \brief Outputs the data_matrix with one row per line.
      */
     auto one_per_line(std::ostream& os, string const& sep = ",") const noexcept -> std::ostream& {
@@ -183,16 +203,13 @@ namespace cj {
     data_matrix_type m_dm;
   };
 
-  template<typename V>
-  auto operator<<(std::ostream& os, data_matrix<V> const& df) -> std::ostream& {
+  template<typename V, typename O>
+  auto operator<<(std::ostream& os, data_matrix<V, O> const& df) -> std::ostream& {
     return df.one_per_line(os);
   }
 
-  /**
-   * \brief Constructs a data_matrix from a file.
-   */
-  template<typename Value>
-  auto data_matrix_from_file(char const* filename, char delim = ',') -> std::optional<data_matrix<Value>> {
+  template<typename Input, typename Output>
+  auto data_matrix<Input, Output>::from_file(char const* filename, char delim) -> std::optional<data_matrix<Input, Output>> {
     auto content = read_file(filename);
     if (!content) {
       return std::nullopt;
@@ -203,17 +220,19 @@ namespace cj {
     if (ncols == 0) {
       return std::nullopt;
     }
-    auto dm = data_matrix<Value>{headers};
+    auto dm = data_matrix<Input, Output>{headers};
     dm.reserve(lines.size() - 1);
     for (auto i = 1u; i < lines.size(); ++i) {
-      auto new_row = typename data_matrix<Value>::row_type{};
-      new_row.reserve(ncols);
-      auto const columns = split(lines[i], delim);
+      auto new_row = typename data_matrix<Input, Output>::row_type{};
+      new_row.first.reserve(ncols - 1);
+      auto columns = split(lines[i], delim);
+      new_row.second = boost::lexical_cast<Output>(columns.back());
       if (columns.size() != ncols) {
         return std::nullopt;
       }
+      columns.pop_back();
       for (auto const& c : columns) {
-        new_row.push_back(boost::lexical_cast<Value>(c));
+        new_row.first.push_back(boost::lexical_cast<Input>(c));
       }
       dm.add_row(new_row);
     }

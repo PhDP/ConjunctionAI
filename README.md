@@ -1,15 +1,15 @@
 <img src='http://phdp.github.io/images/cj-200.png' alt='Conjunction logo' align='right'/>
 
-> **ConjunctionAI is an AI library to explore what lies at the intersection of logic, fuzziness, and
-probability theory.**
+> **ConjunctionAI is an AI library to. ConjunctionAI achieves this by exploring what lies at the
+intersection of logic, fuzziness, and probability theory.**
 
 ConjunctionAI is a C++17 library with a Python package.
 
 ## Code organization
 
-All files directly in *include/cj* represent different mathematical objects or logics. Each of
-these files begin with a detailed summary and list of classes/functions, followed by, of course,
-the code for these classes/functions.
+All files directly in *include/cj* represent different mathematical objects or logics (except
+*common.hh*). Each of these files begin with a detailed summary and list of classes/functions,
+followed by, of course, the code for these classes/functions.
 
 Math objects:
 
@@ -52,7 +52,6 @@ For convenience, some libraries are included directly in the repository or using
 Use the '--recursive' option with git to fetch the submodules, e.g.:
 
     $ git clone --recursive https://github.com/PhDP/ConjunctionAI.git
-
 
     $ sudo apt install cmake libboost-all-dev libeigen3-dev libceres-dev
 

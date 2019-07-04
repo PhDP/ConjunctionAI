@@ -4,7 +4,7 @@
 #ifndef CJ_FUZZY_PARTITION_HH_
 #define CJ_FUZZY_PARTITION_HH_
 
-#include "cj/details/common.hh"
+#include "cj/common.hh"
 
 namespace cj {
 
@@ -61,15 +61,15 @@ namespace cj {
    */
   template<typename Input, typename Truth>
   auto make_slope(Input begin, Input end, Truth before, Truth after) -> std::function<Truth(Input)> {
-    auto const length = x_end - x_begin;
+    auto const length = end - begin;
     return [=](double x) {
-      if (x < x_begin) {
-        return y_before;
+      if (x < begin) {
+        return before;
       }
-      if (x < x_end) {
-        return y_before * (1 - (x - x_begin) / length) + y_after * (1 - (x_end - x) / length);
+      if (x < end) {
+        return before * (1 - (x - begin) / length) + after * (1 - (end - x) / length);
       }
-      return y_after;
+      return after;
     };
   }
 
@@ -85,18 +85,18 @@ namespace cj {
    * \return          A function f: double -> double representing the triangles.
    */
   template<typename Input, typename Truth>
-  auto make_triangle(Input begin, Input apex, Input end, Truth before, Truth apex, Truth after) -> std::function<Truth(Input)> {
-    auto const ls_length = apex - begin;
-    auto const rs_length = end - apex;
+  auto make_triangle(Input begin, Input i_apex, Input end, Truth before, Truth t_apex, Truth after) -> std::function<Truth(Input)> {
+    auto const ls_length = i_apex - begin;
+    auto const rs_length = end - i_apex;
     return [=](Input x) {
       if (x < begin) {
         return before;
       }
-      if (x < apex) {
-        return before * (1 - (x - begin) / ls_length) + apex * (1 - (apex - x) / ls_length);
+      if (x < i_apex) {
+        return before * (1 - (x - begin) / ls_length) + t_apex * (1 - (i_apex - x) / ls_length);
       }
       if (x < end) {
-        return apex * (1 - (x - apex) / rs_length) + after * (1 - (end - x) / rs_length);
+        return t_apex * (1 - (x - i_apex) / rs_length) + after * (1 - (end - x) / rs_length);
       }
       return after;
     };
@@ -118,12 +118,12 @@ namespace cj {
     if (n < 2) {
       return triangles;
     }
-    double const step = (x_end - x_begin) / (n - 1);
-    triangles.push_back(make_slope(x_begin, x_begin + step, height, floor));
+    double const step = (end - begin) / (n - 1);
+    triangles.push_back(make_slope(begin, begin + step, ceil, floor));
     for (auto i = 0u; i < n - 2; ++i) {
-      triangles.push_back(make_triangle(x_begin + i * step, x_begin + (i + 1) * step, x_begin + (i + 2) * step, floor, height, floor));
+      triangles.push_back(make_triangle(begin + i * step, begin + (i + 1) * step, begin + (i + 2) * step, floor, ceil, floor));
     }
-    triangles.push_back(make_slope(x_end - step, x_end, floor, height));
+    triangles.push_back(make_slope(end - step, end, floor, ceil));
     return triangles;
   }
 

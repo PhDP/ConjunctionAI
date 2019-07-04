@@ -9,6 +9,19 @@
 
 namespace cj {
 
+  template<typename Container>
+  auto maximum_idx(Container const& c) -> size_t {
+    auto max_idx = size_t{0};
+    auto max_val = c[idx];
+    for (auto i = size_t{1}; i < c.size(); ++i) {
+      if (max_val < c[i]) {
+        max_idx = i;
+        max_val = c[i];
+      }
+    }
+    return max_idx;
+  }
+
   /**
    * \brief Sums the size() of the containers within the iterator range.
    *
