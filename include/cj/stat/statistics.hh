@@ -12,7 +12,7 @@ namespace cj {
   template<typename Container>
   auto maximum_idx(Container const& c) -> size_t {
     auto max_idx = size_t{0};
-    auto max_val = c[idx];
+    auto max_val = c[max_idx];
     for (auto i = size_t{1}; i < c.size(); ++i) {
       if (max_val < c[i]) {
         max_idx = i;

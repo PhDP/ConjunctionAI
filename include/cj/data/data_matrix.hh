@@ -203,8 +203,8 @@ namespace cj {
     data_matrix_type m_dm;
   };
 
-  template<typename V, typename O>
-  auto operator<<(std::ostream& os, data_matrix<V, O> const& df) -> std::ostream& {
+  template<typename Input, typename Output>
+  auto operator<<(std::ostream& os, data_matrix<Input, Output> const& df) -> std::ostream& {
     return df.one_per_line(os);
   }
 

@@ -14,11 +14,11 @@
 #define CJ_FUZZY_CLASSIFIER_HH_
 
 #include "cj/common.hh"
-#include "cj/fuzzy_partition.hh"
-#include "cj/math/confusion.hh"
-#include "cj/math/statistics.hh"
+#include "cj/math/fuzzy_partition.hh"
+#include "cj/math/truth.hh"
+#include "cj/stat/confusion.hh"
+#include "cj/stat/statistics.hh"
 #include "cj/data/data_matrix.hh"
-#include "cj/truth.hh"
 
 namespace cj {
 
@@ -109,22 +109,23 @@ namespace cj {
     /**
      * \brief Evaluate the fuzzy classifier's effectiveness on a datamatrix.
      */
-    auto evaluate(vector<input_type> const& dm) -> size_t {
+    auto evaluate(vector<input_type> const& row) -> size_t {
       auto truth_by_classes = vector<truth_type>(m_i->num_classes(), truth_trait<truth_type>::zero);
       for (auto const& rule : m_rules) {
         auto truth = truth_trait<truth_type>::unit;
         for (auto const& v : rule.first) {
           truth = truth && m_i->operator()(v.first, v.second, row.at(v.first));
         }
-        truth_by_classes[rule.second] = truth_by_classes || t;
+        truth_by_classes[rule.second] = truth_by_classes[rule.second] || truth;
       }
       return maximum_idx(truth_by_classes);
     }
 
-    auto evaluate_all(data_matrix<input_type> const& dm) -> confusion<size_t, double> {
-      auto results = confusion<size_t, double>{0, 0, 0, 0};
+    auto evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double> {
+      auto results = confusion<size_t, double>{m_i->num_classes()};
       for (auto const& row : dm) {
-        ...
+        auto predicted = evaluate(row.first);
+        results.add_count(predicted, row.second);
       }
       return results;
     }

@@ -43,7 +43,7 @@ find_package(Math)
 
 include_directories(. include ${Boost_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIR})
 
-set(libs_to_link ${CMAKE_THREAD_LIBS_INIT})# ${MATH_LIBRARIES})
+set(CJ_LIBS_TO_LINK ${CMAKE_THREAD_LIBS_INIT})# ${MATH_LIBRARIES})
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

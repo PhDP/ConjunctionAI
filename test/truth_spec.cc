@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "cj/truth.hh"
+#include "cj/math/truth.hh"
 
 using luka = cj::lukasiewicz<double>;
 

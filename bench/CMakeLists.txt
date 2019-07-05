@@ -11,7 +11,7 @@ add_executable(bench_nemo ${bench_cc})
 
 target_link_libraries(bench_nemo
   benchmark
-  ${NEMO_LIB_NAME}
+  ${CJ_LIBS_TO_LINK}
   ${CMAKE_THREAD_LIBS_INIT}
   ${MATH_LIBS}
 )

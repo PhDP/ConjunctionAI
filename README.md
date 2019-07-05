@@ -45,6 +45,7 @@ The hard dependencies outside a C++17-compliant compiler are:
 
 For convenience, some libraries are included directly in the repository or using git submodule:
 
+* [nlohmann's json](https://github.com/nlohmann/json) 3.6.1 is directly in the include directory.
 * [google test](https://github.com/google/googletest/) is a git submodule used for tests.
 * [google benchmark](https://github.com/google/benchmark/) is a git submodule used for benchmarks.
 * [pybind11](https://github.com/pybind/pybind11/) is a git submodule used to build the Python3 package.
