@@ -68,13 +68,7 @@ namespace cj {
     /**
      * \brief Adds a row of data (if it is the right size). Returns whether the row could be added.
      */
-    auto add_row(row_type const& new_row) noexcept -> bool {
-      if (new_row.first.size() + 1 == m_headers.size()) {
-        m_dm.push_back(new_row);
-        return true;
-      }
-      return false;
-    }
+    auto add_row(row_type const& new_row) noexcept -> bool;
 
     /**
      * \brief Returns a reference to the data_matrix's headers.
@@ -104,22 +98,42 @@ namespace cj {
     /**
      * \brief Returns an empty vector if the name of the col is invalid.
      */
-    auto extract_column(string const& col) const noexcept -> vector<input_type> {
-      auto c = vector<input_type>{};
-      auto const it = m_str_to_idx.find(col);
-      if (it == m_str_to_idx.end()) {
-        return c;
-      }
-      size_t const idx = *it;
-      c.reserve(m_dm.size());
-      for (auto const& row : m_dm) {
-        c.push_back(row.at(idx));
-      }
-      return c;
-    }
+    auto extract_column(string const& col) const noexcept -> vector<input_type>;
 
     auto get_output(size_t row) const -> output_type {
       return m_dm.at(row).second;
+    }
+
+    /**
+     * \brief Split x% of the current data_matrix into a new data_matrix.
+     */
+    auto split_frame(double prop, std::mt19937_64 &rng) -> data_matrix<input_type, output_type>;
+
+    /**
+     * \brief Split x% of the current data_matrix into a new data_matrix.
+     */
+    auto split_frame(double prop, size_t seed) -> data_matrix<input_type, output_type> {
+      auto rng = std::mt19937_64(seed);
+      return split_frame(prop, rng);
+    }
+
+    /**
+     * \brief Outputs the data_matrix with one row per line.
+     */
+    auto one_per_line(std::ostream& os, string const& sep = ",") const noexcept -> std::ostream&;
+
+    /**
+     * \brief Iterator to the beginning of the rows.
+     */
+    auto begin() const noexcept -> const_iterator {
+      return m_dm.begin();
+    }
+
+    /**
+     * \brief Iterator to the end of the rows.
+     */
+    auto end() const noexcept -> const_iterator {
+      return m_dm.end();
     }
 
     /**
@@ -143,59 +157,12 @@ namespace cj {
       return m_dm.at(row).first.at(m_str_to_idx.at(col));
     }
 
-    /**
-     * \brief Split x% of the current data_matrix into a new data_matrix.
-     */
-    auto split_frame(double prop, std::mt19937_64 &rng) -> data_matrix<input_type, output_type> {
-      auto new_df = data_matrix<input_type, output_type>(m_headers);
-      size_t const n = prop * nrows();
-      auto const indexes = unique_integers<size_t>(n, size_t(0), nrows(), rng);
-      for (auto const i : indexes) {
-        new_df.add_row(m_dm[i]);
-      }
-      for (auto it = indexes.rbegin(); it != indexes.rend(); ++it) {
-        m_dm.erase(m_dm.begin() + *it);
-      }
-      return new_df;
-    }
-
-    /**
-     * \brief Split x% of the current data_matrix into a new data_matrix.
-     */
-    auto split_frame(double prop, size_t seed) -> data_matrix<input_type, output_type> {
-      auto rng = std::mt19937_64(seed);
-      return split_frame(prop, rng);
-    }
-
-    /**
-     * \brief Iterator to the beginning of the rows.
-     */
-    auto begin() const noexcept -> const_iterator {
-      return m_dm.begin();
-    }
-
-    /**
-     * \brief Iterator to the end of the rows.
-     */
-    auto end() const noexcept -> const_iterator {
-      return m_dm.end();
-    }
+    static auto from_str(string const& txt, char delim = ',') -> std::optional<data_matrix<input_type, output_type>>;
 
     /**
      * \brief Constructs a data_matrix from a file.
      */
     static auto from_file(char const* filename, char delim = ',') -> std::optional<data_matrix<input_type, output_type>>;
-
-    /**
-     * \brief Outputs the data_matrix with one row per line.
-     */
-    auto one_per_line(std::ostream& os, string const& sep = ",") const noexcept -> std::ostream& {
-      os << intersperse(m_headers.begin(), m_headers.end(), sep) << '\n';
-      for (auto const& row : m_dm) {
-        os << intersperse(row.begin(), row.end(), sep) << '\n';
-      }
-      return os;
-    }
 
    private:
     vector<string> m_headers;
@@ -203,18 +170,58 @@ namespace cj {
     data_matrix_type m_dm;
   };
 
+  // Definitions:
+
   template<typename Input, typename Output>
-  auto operator<<(std::ostream& os, data_matrix<Input, Output> const& df) -> std::ostream& {
-    return df.one_per_line(os);
+  auto data_matrix<Input, Output>::add_row(typename data_matrix<Input, Output>::row_type const& new_row) noexcept -> bool {
+    if (new_row.first.size() + 1 == m_headers.size()) {
+      m_dm.push_back(new_row);
+      return true;
+    }
+    return false;
   }
 
   template<typename Input, typename Output>
-  auto data_matrix<Input, Output>::from_file(char const* filename, char delim) -> std::optional<data_matrix<Input, Output>> {
-    auto content = read_file(filename);
-    if (!content) {
-      return std::nullopt;
+  auto data_matrix<Input, Output>::extract_column(string const& col) const noexcept -> vector<Input> {
+    auto c = vector<Input>{};
+    auto const it = m_str_to_idx.find(col);
+    if (it == m_str_to_idx.end()) {
+      return c;
     }
-    auto lines = split(*content, '\n');
+    size_t const idx = *it;
+    c.reserve(m_dm.size());
+    for (auto const& row : m_dm) {
+      c.push_back(row.at(idx));
+    }
+    return c;
+  }
+
+  template<typename Input, typename Output>
+  auto data_matrix<Input, Output>::split_frame(double prop, std::mt19937_64 &rng) -> data_matrix<Input, Output> {
+    auto new_df = data_matrix<Input, Output>(m_headers);
+    size_t const n = prop * nrows();
+    auto const indexes = unique_integers<size_t>(n, size_t(0), nrows(), rng);
+    for (auto const i : indexes) {
+      new_df.add_row(m_dm[i]);
+    }
+    for (auto it = indexes.rbegin(); it != indexes.rend(); ++it) {
+      m_dm.erase(m_dm.begin() + *it);
+    }
+    return new_df;
+  }
+
+  template<typename Input, typename Output>
+  auto data_matrix<Input, Output>::one_per_line(std::ostream& os, string const& sep) const noexcept -> std::ostream& {
+    os << intersperse(m_headers.begin(), m_headers.end(), sep) << '\n';
+    for (auto const& row : m_dm) {
+      os << intersperse(row.begin(), row.end(), sep) << '\n';
+    }
+    return os;
+  }
+
+  template<typename Input, typename Output>
+  auto data_matrix<Input, Output>::from_str(string const& txt, char delim) -> std::optional<data_matrix<Input, Output>> {
+    auto lines = split(txt, '\n');
     auto const headers = split(lines[0], delim);
     auto const ncols = headers.size();
     if (ncols == 0) {
@@ -237,6 +244,17 @@ namespace cj {
       dm.add_row(new_row);
     }
     return dm;
+  }
+
+  template<typename Input, typename Output>
+  auto data_matrix<Input, Output>::from_file(char const* filename, char delim) -> std::optional<data_matrix<Input, Output>> {
+    auto content = read_file(filename);
+    return !content? std::nullopt : data_matrix<Input, Output>::from_str(*content, delim);
+  }
+
+  template<typename Input, typename Output>
+  auto operator<<(std::ostream& os, data_matrix<Input, Output> const& df) -> std::ostream& {
+    return df.one_per_line(os);
   }
 
 } /* end namespace cj */

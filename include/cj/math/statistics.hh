@@ -9,17 +9,48 @@
 
 namespace cj {
 
-  template<typename Container>
-  auto maximum_idx(Container const& c) -> size_t {
-    auto max_idx = size_t{0};
-    auto max_val = c[max_idx];
-    for (auto i = size_t{1}; i < c.size(); ++i) {
-      if (max_val < c[i]) {
-        max_idx = i;
-        max_val = c[i];
+  template<typename It>
+  auto maximum(It fst, It lst) -> It {
+    auto m = fst++;
+    for (; fst != lst; ++fst) {
+      if (*m < *fst) {
+        m = fst;
       }
     }
-    return max_idx;
+    return m;
+  }
+
+  template<typename It>
+  auto minimum(It fst, It lst) -> It {
+    auto m = fst++;
+    for (; fst != lst; ++fst) {
+      if (*fst < *m) {
+        m = fst;
+      }
+    }
+    return m;
+  }
+
+  template<typename Container>
+  auto idx_of_maximum(Container const& c) -> size_t {
+    auto idx = size_t{0};
+    for (auto i = size_t{1}; i < c.size(); ++i) {
+      if (c[idx] < c[i]) {
+        idx = i;
+      }
+    }
+    return idx;
+  }
+
+  template<typename Container>
+  auto idx_of_minimum(Container const& c) -> size_t {
+    auto idx = size_t{0};
+    for (auto i = size_t{1}; i < c.size(); ++i) {
+      if (c[i] < c[idx]) {
+        idx = i;
+      }
+    }
+    return idx;
   }
 
   /**
@@ -34,6 +65,22 @@ namespace cj {
   auto sum_sizes(It a, It b, Acc acc = Acc(0)) -> Acc {
     for (; a != b; ++a) {
       acc += a->size();
+    }
+    return acc;
+  }
+
+  template<typename It, typename Acc>
+  auto sum_key_sizes(It a, It b, Acc acc = Acc(0)) -> Acc {
+    for (; a != b; ++a) {
+      acc += a->first.size();
+    }
+    return acc;
+  }
+
+  template<typename It, typename Acc>
+  auto sum_val_sizes(It a, It b, Acc acc = Acc(0)) -> Acc {
+    for (; a != b; ++a) {
+      acc += a->first.size();
     }
     return acc;
   }

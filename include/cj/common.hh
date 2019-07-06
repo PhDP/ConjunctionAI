@@ -110,6 +110,9 @@ namespace cj {
   template<typename T>
   using rowvec = Eigen::Matrix<T, 1, Eigen::Dynamic>;
 
+  // Aliases for matrices/vectors based on BLAS' convention: 's' = float, 'd' = double,
+  // 'c' = complex<float>, 'z': complex<double>.
+
   using smatrix = matrix<float>;
   using scolvec = colvec<float>;
   using srowvec = rowvec<float>;
@@ -240,8 +243,7 @@ namespace cj {
   }
 
   /**
-   * \brief Hashes T and combine with a seed.
-   * A version of boost's hash_combine using std::hash<T>.
+   * \brief Hashes T and combine with a seed. A version of boost's hash_combine using std::hash.
    */
   template<typename T>
   constexpr auto std_hash_combine(size_t& seed, T const& t) noexcept -> void {
@@ -249,13 +251,13 @@ namespace cj {
   }
 
   /**
-   * \brief Hashes a range and combine with a seed.
-   * A version of boost's hash_range using std::hash<T>.
+   * \brief Hashes a range and combine with a seed. A version of boost's hash_range using std::hash.
    */
   template<typename It>
   constexpr auto std_hash_range(size_t& seed, It fst, It lst) noexcept -> void {
     for (; fst != lst; ++fst) {
-      seed ^= std::hash<typename std::iterator_traits<It>::value_type>{}(*fst) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+      using value_type = typename std::iterator_traits<It>::value_type;
+      seed ^= std::hash<value_type>{}(*fst) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
   }
 

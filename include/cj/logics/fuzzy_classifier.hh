@@ -2,13 +2,6 @@
  * # Summary
  *
  * Class for a simple fuzzy rule-based classifier.
- *
- * This header defines two classes: 'frbc' is a set of fuzzy rules, with labels and variables
- * being represented by integers. 'frbc_intepretation' provides an interpretation for 'frbc',
- * it gives names to the integers and define the fuzzy partitions. Each 'frbc' object is
- * associated with an 'interpretation'. The goal of this design is to allow the quick
- * copy and mutation of fuzzy classifiers for evolutionary algorithms, while maintaining
- * a single shared object for their interpretation.
  */
 #ifndef CJ_FUZZY_CLASSIFIER_HH_
 #define CJ_FUZZY_CLASSIFIER_HH_
@@ -16,14 +9,15 @@
 #include "cj/common.hh"
 #include "cj/math/fuzzy_partition.hh"
 #include "cj/math/truth.hh"
-#include "cj/stat/confusion.hh"
-#include "cj/stat/statistics.hh"
+#include "cj/math/confusion.hh"
+#include "cj/math/statistics.hh"
 #include "cj/data/data_matrix.hh"
 
 namespace cj {
 
   /**
-   * \brief Fuzzy rule-based classifier.
+   * \brief Fuzzy rule-based classifier: predict a category given a set of inputs using a set
+   * of fuzzy rules of the form 'IF antecedents THEN category'.
    */
   template<typename Truth, typename Input, typename Id = uint32_t>
   class fuzzy_classifier {
@@ -44,62 +38,86 @@ namespace cj {
     /**
      * \brief Builds a fuzzy knowledge base with a pointer to fuzzy_set and (optionally) a set of intitial rules.
      */
-    fuzzy_classifier(interpretation_type const& fs, rules_type const& initial_rules = {});
+    fuzzy_classifier(interpretation_type const& i, rules_type const& initial_rules = {})
+      : m_i(i), m_rules{initial_rules} {
+    }
 
     /**
      * \brief Whether the knowledge base has no rules.
      */
-    auto empty() const -> bool { return m_rules.empty(); }
+    auto empty() const -> bool {
+      return m_rules.empty();
+    }
 
     /**
      * \brief Returns the number of rules in the knowledge base.
      */
-    auto size() const -> size_t { return m_rules.size(); }
+    auto size() const -> size_t {
+      return m_rules.size();
+    }
 
     /**
-     * \brief Complexity as the sum of the size of all antecedents (the number of input variables) + 1.
+     * \brief Complexity as the sum of the size of all rule (number of input variables in the
+     * antecedents + 1).
      */
-    auto complexity() const -> size_t;
+    auto complexity() const -> size_t {
+      return sum_key_sizes(m_rules.begin(), m_rules.end(), m_rules.size());
+    }
 
     /**
      * \brief Whether a rule with a given antecedent is present.
      */
-    auto has_antecedent(antecedent_type const& m) const -> bool;
+    auto has_antecedent(antecedent_type const& a) const -> bool {
+      return m_rules.find(a) != m_rules.end();
+    }
 
     /**
      * \brief Whether a given rule is present.
      */
-    auto has_rule(antecedent_type const& a, id_type c) const -> bool;
+    auto has_rule(antecedent_type const& a, id_type c) const -> bool {
+      auto it = m_rules.find(a);
+      return it == m_rules.end()? false : it->second == c;
+    }
 
     /**
      * \brief Whether a given rule is present.
      */
-    auto has_rule(rule_type const& r) const -> bool;
+    auto has_rule(rule_type const& r) const -> bool {
+      return has_rule(r.first, r.second);
+    }
 
     /**
      * \brief Adds a rule (unless it is already there).
      */
-    auto add_rule(antecedent_type const& a, id_type c) -> void;
+    auto add_rule(antecedent_type const& a, id_type c) -> void {
+      m_rules[a] = c;
+    }
 
     /**
      * \brief Adds a rule (unless it is already there).
      */
-    auto add_rule(rule_type const& r) -> void;
+    auto add_rule(rule_type const& r) -> void {
+      m_rules.insert(r);
+    }
 
     /**
      * \brief Removes a rule (unless it is already there).
      */
-    auto rmv_rule(antecedent_type const& a, id_type c) -> void;
+    auto rmv_rule(antecedent_type const& a) -> void {
+      m_rules.erase(a);
+    }
 
     /**
      * \brief Removes a rule (if present).
      */
-    auto rmv_rule(rule_type const& r) -> void;
+    auto rmv_rule(rule_type const& r) -> void {
+      m_rules.erase(r.first);
+    }
 
     /**
      * \brief Returns a random rule.
      */
-    auto get_random_rule(std::mt19937_64 &rng) const -> rule_type;
+    auto get_random_rule(std::mt19937_64& rng) const -> rule_type;
 
     /**
      * \brief Returns a random rule and remove it from the knowledge base.
@@ -107,45 +125,42 @@ namespace cj {
     auto pop_random_rule(std::mt19937_64& rng) -> rule_type;
 
     /**
-     * \brief Evaluate the fuzzy classifier's effectiveness on a datamatrix.
+     * \brief Generates a prediction (category ID) given a set of input values.
      */
-    auto evaluate(vector<input_type> const& row) -> size_t {
-      auto truth_by_classes = vector<truth_type>(m_i->num_classes(), truth_trait<truth_type>::zero);
-      for (auto const& rule : m_rules) {
-        auto truth = truth_trait<truth_type>::unit;
-        for (auto const& v : rule.first) {
-          truth = truth && m_i->operator()(v.first, v.second, row.at(v.first));
-        }
-        truth_by_classes[rule.second] = truth_by_classes[rule.second] || truth;
-      }
-      return maximum_idx(truth_by_classes);
-    }
+    auto evaluate(vector<input_type> const& row) -> id_type;
 
-    auto evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double> {
-      auto results = confusion<size_t, double>{m_i->num_classes()};
-      for (auto const& row : dm) {
-        auto predicted = evaluate(row.first);
-        results.add_count(predicted, row.second);
-      }
-      return results;
+    /**
+     * \brief Returns the confusion matrix for a database of (input, category) pairs.
+     */
+    auto evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double>;
+
+    /**
+     * \brief Reference to the fuzzy sets used to define this knowledge base.
+     */
+    auto get_interpretation() const -> interpretation_type {
+      return m_i;
     }
 
     /**
      * \brief Reference to the fuzzy sets used to define this knowledge base.
      */
-    auto get_interpretation() const -> interpretation_ptr { return m_i.get(); }
-
-    auto begin() const -> const_iterator { return m_rules.begin(); }
-
-    auto end() const -> const_iterator { return m_rules.end(); }
-
-    auto operator==(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool {
-      if (m_rules.size() != other.size() || m_i != other.m_i) {
-        return false;
-      }
-      //
-      return true;
+    auto get_interpretation_ptr() const -> interpretation_type {
+      return m_i.get();
     }
+
+    static auto make_interpretation(vector<string> categories) -> interpretation_type  {
+      return std::make_shared<interpretation>(interpretation{std::move(categories)});
+    }
+
+    auto begin() const -> const_iterator {
+      return m_rules.begin();
+    }
+
+    auto end() const -> const_iterator {
+      return m_rules.end();
+    }
+
+    auto operator==(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool;
 
     auto operator!=(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool {
       return !(*this == other);
@@ -156,7 +171,7 @@ namespace cj {
       /**
        * \brief Builds an interpretation with a vector of categories.
        */
-      interpretation(vector<string> classes);
+      interpretation(vector<string> categories) : m_categories{std::move(categories)} {};
 
       /**
        * \brief Adds an input variable with equally-sized triangular fuzzy sets.
@@ -165,77 +180,155 @@ namespace cj {
        * \param a       Input value where the fuzzy sets begin.
        * \param b       Input value where the fuzzy sets end.
        */
-      auto add_triangular_sets(string const& name, size_t nsets, input_type a, input_type b) -> void;
-
-      /**
-       * \brief Whether the object is empty.
-       */
-      auto empty() const -> bool;
+      auto add_triangular_sets(string const& name, size_t nsets, input_type a, input_type b) -> void {
+        m_names.push_back(name);
+        m_partitions.push_back(make_triangles(nsets, a, b));
+        m_labels.push_back(make_labels(nsets));
+      }
 
       /**
        * \brief Number of input variables.
        */
-      auto size() const -> size_t;
+      auto num_input() const -> size_t {
+        return m_input_names.size();
+      }
 
       /**
-       * \brief Number of fuzzy sets associated with input variable n.
+       * \brief Number of partitions associated with input 'n'.
        */
-      auto size(id_type n) const -> size_t;
-
-      auto num_classes() const -> size_t;
+      auto num_partitions(id_type n) const -> size_t {
+        return m_labels.at(n).size();
+      }
 
       /**
-       * \brief Returns the name of the true or false consequent.
+       * \brief Number of categories (possible outputs).
        */
-      auto consequent(bool n) const -> string const&;
+      auto num_categories() const -> size_t {
+        return m_categories.size();
+      }
 
       /**
        * \brief Name of the nth input variable.
        */
-      auto var_name(id_type n) const -> string const&;
+      auto input_name(id_type n) const -> string const& {
+        return m_input_names.at(n);
+      }
 
       /**
-       * \brief Name of the sets associated with the nth input variable.
+       * \brief Name of the nth input variable.
        */
-      auto sets_name(id_type n) const -> string const&; // WHAT IS THIS?
+      auto category_name(id_type n) const -> string const& {
+        return m_categories.at(n);
+      }
 
       /**
        * \brief Vector of labels for the fuzzy sets associated with the nth input variable.
        */
-      auto label(id_type n) const -> vector<string> const&;
+      auto label(id_type n) const -> vector<string> const& {
+        return m_labels.at(n);
+      }
 
       /**
        * \brief Name of the label 's' of the fuzzy sets associated with the nth input variable.
        */
-      auto label(id_type n, id_type s) const -> string const&;
+      auto label(id_type n, id_type s) const -> string const& {
+        return m_labels.at(n).at(s);
+      }
 
       /**
        * \brief Returns a reference to the fuzzy sets associated with the nth input variable.
        */
-      auto operator()(id_type n) const -> vector<std::function<double(double)>> const&;
+      auto get(id_type n) const -> vector<std::function<truth_type(input_type)>> const& {
+        return m_partitions.at(n);
+      }
 
       /**
        * \brief Returns a reference to the fuzzy sets 's' associated with the nth input variable.
        */
-      auto operator()(id_type n, id_type s) const -> std::function<double(double)> const&;
+      auto get(id_type n, id_type s) const -> std::function<truth_type(input_type)> const& {
+        return m_partitions.at(n).at(s);
+      }
 
       /**
        * \brief Call the fuzzy sets 's' associated with the nth input variable with value 'x'.
        */
-      auto operator()(id_type n, id_type s, double x) const -> double;
+      auto get(id_type n, id_type s, input_type x) const -> truth_type {
+        return m_partitions.at(n).at(s)(x);
+      }
 
      private:
-      vector<string> m_ant_names; // Names of the variables (for the antecedants) given their id.
-      vector<vector<std::function<truth_type(input_type)>>> m_sets; // Partition for each variable.
-      vector<string> m_sets_names; // ????
-      vector<vector<string>> m_sets_labels; // Name of the linguistic variables for each input variable.
-      vector<string> m_cons; // Name of the categories for the consequants.
+      vector<string> m_input_names; // Names of the variables (for the antecedants) given their id.
+      vector<vector<string>> m_labels; // Name of the linguistic variables for each input variable.
+      vector<vector<std::function<truth_type(input_type)>>> m_partitions; // Partition for each variable.
+      vector<string> m_categories; // Name of the categories (output).
     };
 
    private:
     rules_type m_rules;
     interpretation_type m_i;
   };
+
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::get_random_rule(std::mt19937_64& rng) const -> rule_type {
+    if (empty()) {
+      return rule_type{};
+    }
+    if (size() == 1) {
+      return *m_rules.begin();
+    }
+    auto unif = std::uniform_int_distribution<size_t>(0, size() - 1);
+    auto const by = unif(rng);
+    auto it = m_rules.begin();
+    std::advance(it, by);
+    return *it;
+  }
+
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::pop_random_rule(std::mt19937_64& rng) -> rule_type {
+    if (empty()) {
+      return rule_type{};
+    }
+    auto it = m_rules.begin();
+    if (size() == 1) {
+      auto p = rule_type{*it};
+      m_rules.erase(it);
+      return p;
+    }
+    auto unif = std::uniform_int_distribution<size_t>(0, size() - 1);
+    auto const by = unif(rng);
+    std::advance(it, by);
+    auto p = rule_type{*it};
+    m_rules.erase(it);
+    return p;
+  }
+
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::evaluate(vector<input_type> const& row) -> id_type {
+    auto truth_by_classes = vector<truth_type>(m_i->num_classes(), truth_trait<truth_type>::zero);
+    for (auto const& rule : m_rules) {
+      auto truth = truth_trait<truth_type>::unit;
+      for (auto const& v : rule.first) {
+        truth = truth && m_i.get(v.first, v.second, row.at(v.first));
+      }
+      truth_by_classes[rule.second] = truth_by_classes[rule.second] || truth;
+    }
+    return idx_of_maximum(truth_by_classes);
+  }
+
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double> {
+    auto results = confusion<size_t, double>{m_i->num_classes()};
+    for (auto const& row : dm) {
+      auto predicted = evaluate(row.first);
+      results.add_count(predicted, row.second);
+    }
+    return results;
+  }
+
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::operator==(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool {
+    return m_rules == other.m_rules && m_i == other.m_i;
+  }
 
   template<typename Truth, typename Input, typename Id>
   auto show_rule(std::ostream& os, typename fuzzy_classifier<Truth, Input, Id>::rule_type const& p, typename fuzzy_classifier<Truth, Input, Id>::interpretation_ptr f) -> void;
@@ -257,6 +350,7 @@ namespace std {
       for (auto const& r : kb) {
         cj::std_hash_combine(seed, r);
       }
+      cj::std_hash_combine(seed, kb.get_interpretation());
       return seed;
     }
   };

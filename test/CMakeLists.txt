@@ -3,10 +3,10 @@ add_subdirectory(gtest)
 include_directories(./gtest/googletest/include)
 
 set(test_src run_all.cc
-  fuzzy_classifier_spec.cc
-  truth_spec.cc
+  logics/fuzzy_classifier_spec.cc
   data/data_matrix_spec.cc
-  stat/confusion_spec.cc
+  math/truth_spec.cc
+  math/confusion_spec.cc
 )
 
 add_executable(test_cj ${test_src})
