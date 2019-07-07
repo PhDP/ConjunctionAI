@@ -1,7 +1,7 @@
 <img src='http://phdp.github.io/images/cj-200.png' alt='Conjunction logo' align='right'/>
 
-> **ConjunctionAI is an AI library to. ConjunctionAI achieves this by exploring what lies at the
-intersection of logic, fuzziness, and probability theory.**
+> **ConjunctionAI is an AI library to reasong with clear models. ConjunctionAI achieves this by
+exploring what lies at the intersection of logic, fuzziness, and probability theory.**
 
 ConjunctionAI is a C++17 library with a Python package.
 

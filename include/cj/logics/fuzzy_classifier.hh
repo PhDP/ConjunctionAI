@@ -1,7 +1,7 @@
 /**
  * # Summary
  *
- * Class for a simple fuzzy rule-based classifier.
+ * Class for a fuzzy rule-based classifier.
  */
 #ifndef CJ_FUZZY_CLASSIFIER_HH_
 #define CJ_FUZZY_CLASSIFIER_HH_
@@ -125,16 +125,6 @@ namespace cj {
     auto pop_random_rule(std::mt19937_64& rng) -> rule_type;
 
     /**
-     * \brief Generates a prediction (category ID) given a set of input values.
-     */
-    auto evaluate(vector<input_type> const& row) -> id_type;
-
-    /**
-     * \brief Returns the confusion matrix for a database of (input, category) pairs.
-     */
-    auto evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double>;
-
-    /**
      * \brief Reference to the fuzzy sets used to define this knowledge base.
      */
     auto get_interpretation() const -> interpretation_type {
@@ -148,6 +138,18 @@ namespace cj {
       return m_i.get();
     }
 
+    /**
+     * \brief Generates a prediction (category ID) given a set of input values.
+     */
+    auto evaluate(vector<input_type> const& row) -> id_type;
+
+    /**
+     * \brief Returns the confusion matrix for a database of (input, category) pairs.
+     */
+    auto evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double>;
+
+//    auto evolve(data_matrix<input_type, id_type> const& training, std::function<void(std::mt19937_64&)> const& mutate, std::mt19937_64& rng) -> void;
+
     static auto make_interpretation(vector<string> categories) -> interpretation_type  {
       return std::make_shared<interpretation>(interpretation{std::move(categories)});
     }
@@ -160,10 +162,12 @@ namespace cj {
       return m_rules.end();
     }
 
-    auto operator==(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool;
+    auto operator==(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool {
+      return m_rules == other.m_rules && m_i == other.m_i;
+    }
 
     auto operator!=(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool {
-      return !(*this == other);
+      return m_rules != other.m_rules || m_i != other.m_i;
     }
 
     class interpretation {
@@ -235,6 +239,14 @@ namespace cj {
         return m_labels.at(n).at(s);
       }
 
+      auto partition_name(id_type n) const -> vector<string> const& {
+        return m_partition_names.at(n);
+      }
+
+      auto partition_name(id_type n, id_type p) const -> string const& {
+        return m_partition_names.at(n).at(p);
+      }
+
       /**
        * \brief Returns a reference to the fuzzy sets associated with the nth input variable.
        */
@@ -260,6 +272,7 @@ namespace cj {
       vector<string> m_input_names; // Names of the variables (for the antecedants) given their id.
       vector<vector<string>> m_labels; // Name of the linguistic variables for each input variable.
       vector<vector<std::function<truth_type(input_type)>>> m_partitions; // Partition for each variable.
+      vector<vector<string>> m_partition_names; // Name of the partitions (e.g.: Triangle blah blah, Gaussian, ...).
       vector<string> m_categories; // Name of the categories (output).
     };
 
@@ -323,11 +336,6 @@ namespace cj {
       results.add_count(predicted, row.second);
     }
     return results;
-  }
-
-  template<typename Truth, typename Input, typename Id>
-  auto fuzzy_classifier<Truth, Input, Id>::operator==(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool {
-    return m_rules == other.m_rules && m_i == other.m_i;
   }
 
   template<typename Truth, typename Input, typename Id>
