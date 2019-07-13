@@ -1,6 +1,6 @@
 <img src='http://phdp.github.io/images/cj-200.png' alt='Conjunction logo' align='right'/>
 
-> **ConjunctionAI is an AI library to reasong with clear models. ConjunctionAI achieves this by
+> **ConjunctionAI is an AI library to reason with clear models. ConjunctionAI achieves this by
 exploring what lies at the intersection of logic, fuzziness, and probability theory.**
 
 ConjunctionAI is a C++17 library with a Python package.
@@ -28,7 +28,7 @@ Logics (here, zeroth-order logic is a synonym of propositional logic):
 | Fuzzy rule-based classifier | Zeroth-order  | Many-valued                               | fuzzy_classifier.hh        |
 | First-order logic           | First-order   | Bivalent or Many-Valued                   | fol.hh                     |
 | Hybrid Markov logic         | First-order   | Probabilistic + Many-valued-ish :star2:   | hybrid_markov_logic.hh     |
-| System F                    | Higher-order  | Bivalent                                  | system_f.hh                |
+| System F                    | Higher-order  | Bivalent or Many-Valued                   | system_f.hh                |
 
 :star2: Hybrid Markov logic supports soft equalities, soft inequalities and similarly 'soft'
 predicates.

@@ -16,7 +16,7 @@ namespace cj {
   template<typename Integer, typename Rng, template<typename...> class SetType = flat_set>
   auto unique_integers(size_t n, Integer begin, Integer end, Rng& rng) noexcept -> SetType<Integer> {
     auto u = SetType<Integer>{};
-    if (begin == end) {
+    if (end < begin + 1) { // WRONGGGGGGGGGGGGGGGGGGGG!!!!!
       return u;
     }
     auto dist = std::uniform_int_distribution<Integer>(begin, end - 1);
@@ -28,6 +28,12 @@ namespace cj {
       u.insert(dist(rng));
     }
     return u;
+  }
+
+  template<typename Container>
+  auto pick_unique_pair(Container const& c, std::mt19937_64& rng) -> std::array<typename Container::value_type, 2> {
+    auto idx = unique_integers(2, size_t{0}, c.size());
+    return {get(c, get(idx, 0)), get(c, get(idx, 1))};
   }
 
 } /* end namespace cj */

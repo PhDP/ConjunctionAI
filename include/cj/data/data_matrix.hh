@@ -32,9 +32,8 @@ namespace cj {
     /**
      * \brief Constructs an empty data_matrix with a set of headers.
      */
-    data_matrix(vector<string> const& headers)
-      : m_headers(headers) {
-      unordered_map<string, size_t> m_str_to_idx;
+    data_matrix(vector<string> const& headers, string const& output)
+      : m_headers(headers), m_output_name(output) {
     }
 
     /**
@@ -85,7 +84,7 @@ namespace cj {
     }
 
     auto output_name() const noexcept -> string const& {
-      return m_headers.back();
+      return m_output_name;
     }
 
     /**
@@ -150,12 +149,12 @@ namespace cj {
       return m_dm.at(row).first.at(col);
     }
 
-    /**
-     * \brief Returns a value for a given row and column using the header's name for the column.
-     */
-    auto operator()(size_t row, string const& col) const -> input_type {
-      return m_dm.at(row).first.at(m_str_to_idx.at(col));
-    }
+//    /**
+//     * \brief Returns a value for a given row and column using the header's name for the column.
+//     */
+//    auto operator()(size_t row, string const& col) const -> input_type {
+//      return m_dm.at(row).first.at(m_str_to_idx.at(col));
+//    }
 
     static auto from_str(string const& txt, char delim = ',') -> std::optional<data_matrix<input_type, output_type>>;
 
@@ -165,36 +164,36 @@ namespace cj {
     static auto from_file(char const* filename, char delim = ',') -> std::optional<data_matrix<input_type, output_type>>;
 
    private:
-    vector<string> m_headers;
-    unordered_map<string, size_t> m_str_to_idx;
     data_matrix_type m_dm;
+    vector<string> m_headers;
+    string m_output_name;
   };
 
   // Definitions:
 
   template<typename Input, typename Output>
   auto data_matrix<Input, Output>::add_row(typename data_matrix<Input, Output>::row_type const& new_row) noexcept -> bool {
-    if (new_row.first.size() + 1 == m_headers.size()) {
+    if (new_row.first.size() == m_headers.size()) {
       m_dm.push_back(new_row);
       return true;
     }
     return false;
   }
 
-  template<typename Input, typename Output>
-  auto data_matrix<Input, Output>::extract_column(string const& col) const noexcept -> vector<Input> {
-    auto c = vector<Input>{};
-    auto const it = m_str_to_idx.find(col);
-    if (it == m_str_to_idx.end()) {
-      return c;
-    }
-    size_t const idx = *it;
-    c.reserve(m_dm.size());
-    for (auto const& row : m_dm) {
-      c.push_back(row.at(idx));
-    }
-    return c;
-  }
+//  template<typename Input, typename Output>
+//  auto data_matrix<Input, Output>::extract_column(string const& col) const noexcept -> vector<Input> {
+//    auto c = vector<Input>{};
+//    auto const it = m_str_to_idx.find(col);
+//    if (it == m_str_to_idx.end()) {
+//      return c;
+//    }
+//    size_t const idx = *it;
+//    c.reserve(m_dm.size());
+//    for (auto const& row : m_dm) {
+//      c.push_back(row.at(idx));
+//    }
+//    return c;
+//  }
 
   template<typename Input, typename Output>
   auto data_matrix<Input, Output>::split_frame(double prop, std::mt19937_64 &rng) -> data_matrix<Input, Output> {
@@ -222,12 +221,14 @@ namespace cj {
   template<typename Input, typename Output>
   auto data_matrix<Input, Output>::from_str(string const& txt, char delim) -> std::optional<data_matrix<Input, Output>> {
     auto lines = split(txt, '\n');
-    auto const headers = split(lines[0], delim);
-    auto const ncols = headers.size();
+    auto headers = split(lines[0], delim);
+    auto const output_name = headers.back();
+    headers.pop_back();
+    auto const ncols = headers.size() + 1;
     if (ncols == 0) {
       return std::nullopt;
     }
-    auto dm = data_matrix<Input, Output>{headers};
+    auto dm = data_matrix<Input, Output>{headers, output_name};
     dm.reserve(lines.size() - 1);
     for (auto i = 1u; i < lines.size(); ++i) {
       auto new_row = typename data_matrix<Input, Output>::row_type{};

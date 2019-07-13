@@ -17,25 +17,25 @@ namespace cj {
    */
   inline auto make_labels(size_t n) -> vector<string> {
     switch (n) {
-      case 0:
-      case 1:
-        return vector<string>{};
-      case 2:
-        return vector<string>{"is low", "is high"};
-      case 3:
-        return vector<string>{"is low", "is average", "is high"};
-      case 4:
-        return vector<string>{"is very low", "is low", "is high", "is very high"};
-      case 5:
-        return vector<string>{"is very low", "is low", "is average", "is high", "is very high"};
-      case 6:
-        return vector<string>{"is very low", "is low", "is low-average", "is average-high", "is high", "is very high"};
-      case 7:
-        return vector<string>{"is very low", "is low", "is low-average", "is average", "is average-high", "is high", "is very high"};
+    case 0:
+    case 1:
+      return vector<string>{};
+    case 2:
+      return vector<string>{"is low", "is high"};
+    case 3:
+      return vector<string>{"is low", "is average", "is high"};
+    case 4:
+      return vector<string>{"is very low", "is low", "is high", "is very high"};
+    case 5:
+      return vector<string>{"is very low", "is low", "is average", "is high", "is very high"};
+    case 6:
+      return vector<string>{"is very low", "is low", "is low-average", "is average-high", "is high", "is very high"};
+    case 7:
+      return vector<string>{"is very low", "is low", "is low-average", "is average", "is average-high", "is high", "is very high"};
     }
     auto ls = vector<string>{};
-    bool const odd = n & 1;
-    size_t const half = n >> 1;
+    auto const odd = n & 1;
+    auto const half = n >> 1;
     for (auto i = 0u; i < half; ++i) {
       ls.push_back("is low" + boost::lexical_cast<string>(i));
     }
@@ -67,7 +67,7 @@ namespace cj {
         return before;
       }
       if (x < end) {
-        return before * (1 - (x - begin) / length) + after * (1 - (end - x) / length);
+        return Truth{before.value * (1 - (x - begin) / length) + after.value * (1 - (end - x) / length)};
       }
       return after;
     };
@@ -93,10 +93,10 @@ namespace cj {
         return before;
       }
       if (x < i_apex) {
-        return before * (1 - (x - begin) / ls_length) + t_apex * (1 - (i_apex - x) / ls_length);
+        return Truth{before.value * (1 - (x - begin) / ls_length) + t_apex.value * (1 - (i_apex - x) / ls_length)};
       }
       if (x < end) {
-        return t_apex * (1 - (x - i_apex) / rs_length) + after * (1 - (end - x) / rs_length);
+        return Truth{t_apex.value * (1 - (x - i_apex) / rs_length) + after.value * (1 - (end - x) / rs_length)};
       }
       return after;
     };

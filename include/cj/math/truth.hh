@@ -20,8 +20,6 @@ namespace cj {
   template<>
   struct truth_trait<bool> {
     static const size_t fuzziness = 0;
-    static const bool zero = false;
-    static const bool unit = true;
   };
 
   inline auto implication(bool lhs, bool rhs) -> bool {
@@ -36,13 +34,13 @@ namespace cj {
   struct lukasiewicz {
     Float value;
     explicit lukasiewicz(Float v) : value{v} {}
+    static auto zero() -> lukasiewicz<Float> { return lukasiewicz<Float>{0}; }
+    static auto unit() -> lukasiewicz<Float> { return lukasiewicz<Float>{1}; }
   };
 
   template<typename Float>
   struct truth_trait<lukasiewicz<Float>> {
     static const size_t fuzziness = 1;
-    static const lukasiewicz<Float> zero = lukasiewicz<Float>{0};
-    static const lukasiewicz<Float> unit = lukasiewicz<Float>{1};
   };
 
   template<typename F>
@@ -104,13 +102,13 @@ namespace cj {
   struct godel {
     Float value;
     explicit godel(Float v) : value{v} {}
+    static auto zero() -> godel<Float> { return godel<Float>{0}; }
+    static auto unit() -> godel<Float> { return godel<Float>{1}; }
   };
 
   template<typename Float>
   struct truth_trait<godel<Float>> {
     static const size_t fuzziness = 1;
-    static const godel<Float> zero = godel<Float>{0};
-    static const godel<Float> unit = godel<Float>{1};
   };
 
   template<typename F>
@@ -172,13 +170,13 @@ namespace cj {
   struct product {
     Float value;
     explicit product(Float v) : value{v} {}
+    static auto zero() -> product<Float> { return product<Float>{0}; }
+    static auto unit() -> product<Float> { return product<Float>{1}; }
   };
 
   template<typename Float>
   struct truth_trait<product<Float>> {
     static const size_t fuzziness = 1;
-    static const product<Float> zero = product<Float>{0};
-    static const product<Float> unit = product<Float>{1};
   };
 
   template<typename F>

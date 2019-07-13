@@ -60,6 +60,18 @@ namespace cj {
       return m_body.size() + m_head.size();
     }
 
+    auto count(literal_type const& a) const noexcept -> size_t {
+      return m_body.count(a) + m_head.count(a);
+    }
+
+    auto body_count(literal_type const& a) const noexcept -> size_t {
+      return m_body.count(a);
+    }
+
+    auto head_count(literal_type const& a) const noexcept -> size_t {
+      return m_head.count(a);
+    }
+
     /**
      * \brief Number of literals in the head.
      */

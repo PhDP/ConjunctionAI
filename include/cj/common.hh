@@ -227,6 +227,24 @@ namespace cj {
   // Helpers:
 
   /**
+   * \brief Get nth element using std::advance.
+   */
+  template<typename Container>
+  inline auto get(Container const& c, size_t n) -> typename Container::value_type const& {
+    auto it = c.begin();
+    std::advance(it, n);
+    return *it;
+  }
+
+  /**
+   * \brief Whether a container contains a given element.
+   */
+  template<typename Container>
+  inline auto contains(Container const& c, typename Container::value_type const& elem) -> bool {
+    return c.find(elem) != c.end();
+  }
+
+  /**
    * \brief Checks if left <= x <= right.
    */
   template<typename T>

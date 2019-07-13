@@ -12,23 +12,27 @@
 #include "cj/math/confusion.hh"
 #include "cj/math/statistics.hh"
 #include "cj/data/data_matrix.hh"
+#include "cj/utils/bounded_multimap.hh"
+//#include "cj/math/set.hh"
 
 namespace cj {
 
   /**
    * \brief Fuzzy rule-based classifier: predict a category given a set of inputs using a set
-   * of fuzzy rules of the form 'IF antecedents THEN category'.
+   *        of fuzzy rules of the form 'IF antecedents THEN category'.
    */
   template<typename Truth, typename Input, typename Id = uint32_t>
   class fuzzy_classifier {
    public:
     class interpretation;
 
-    using id_type = Id;
     using truth_type = Truth;
     using input_type = Input;
+    using id_type = Id;
+    using self_type = fuzzy_classifier<truth_type, input_type, id_type>;
     using interpretation_type = std::shared_ptr<interpretation>;
-    using interpretation_ptr = interpretation const*;
+    using mutate_function = std::function<void(self_type&, std::mt19937_64&)>;
+    using fitness_function = std::function<double(self_type const&, data_matrix<input_type, id_type> const&)>;
     using antecedent_type = flat_map<id_type, id_type>; // Maps an input ID to a fuzzyset ID.
     using rule_type = pair<antecedent_type, id_type>; // Pairs a rule with its output (for now: a binary value).
     using rules_type = flat_map<antecedent_type, id_type>; // Maps rules to output.
@@ -36,7 +40,8 @@ namespace cj {
     using operator_type = std::function<truth_type(truth_type const&, truth_type const&)>;
 
     /**
-     * \brief Builds a fuzzy knowledge base with a pointer to fuzzy_set and (optionally) a set of intitial rules.
+     * \brief Builds a fuzzy knowledge base with a pointer to fuzzy_set and (optionally) a set of
+     *        intitial rules.
      */
     fuzzy_classifier(interpretation_type const& i, rules_type const& initial_rules = {})
       : m_i(i), m_rules{initial_rules} {
@@ -58,7 +63,7 @@ namespace cj {
 
     /**
      * \brief Complexity as the sum of the size of all rule (number of input variables in the
-     * antecedents + 1).
+     *        antecedents + 1).
      */
     auto complexity() const -> size_t {
       return sum_key_sizes(m_rules.begin(), m_rules.end(), m_rules.size());
@@ -134,7 +139,7 @@ namespace cj {
     /**
      * \brief Reference to the fuzzy sets used to define this knowledge base.
      */
-    auto get_interpretation_ptr() const -> interpretation_type {
+    auto get_raw_interpretation() const -> interpretation const* {
       return m_i.get();
     }
 
@@ -148,28 +153,67 @@ namespace cj {
      */
     auto evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double>;
 
-//    auto evolve(data_matrix<input_type, id_type> const& training, std::function<void(std::mt19937_64&)> const& mutate, std::mt19937_64& rng) -> void;
-
-    static auto make_interpretation(vector<string> categories) -> interpretation_type  {
-      return std::make_shared<interpretation>(interpretation{std::move(categories)});
-    }
-
+    /**
+     * \brief Returns iterator to the beginning of the rules.
+     */
     auto begin() const -> const_iterator {
       return m_rules.begin();
     }
 
+    /**
+     * \brief Returns iterator to the end of the rules.
+     */
     auto end() const -> const_iterator {
       return m_rules.end();
     }
 
-    auto operator==(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool {
+    /**
+     * \brief Returns a reference to the set of rules.
+     */
+    auto rules() const -> rules_type const& {
+      return m_rules;
+    }
+
+    auto operator==(self_type const& other) const -> bool {
       return m_rules == other.m_rules && m_i == other.m_i;
     }
 
-    auto operator!=(fuzzy_classifier<Truth, Input, Id> const& other) const -> bool {
+    auto operator!=(self_type const& other) const -> bool {
       return m_rules != other.m_rules || m_i != other.m_i;
     }
 
+    /**
+     * \brief Helper to builds a shared pointer to an interpretation given a vector of categories.
+     */
+    static auto make_interpretation(vector<string> categories) -> interpretation_type  {
+      return std::make_shared<interpretation>(interpretation{std::move(categories)});
+    }
+
+    static auto mate(self_type const& mom, self_type const& dad, std::mt19937_64& rng) -> self_type;
+
+    /**
+     * \brief ...
+     *
+     * \param fs          Initial knowledge bases.
+     * \param mut         Mutation function.
+     * \param fit         Fitness function.
+     * \param stop        ...
+     * \param training    Training data.
+     * \param pop_size    ...
+     * \param elites      ...
+     * \param seed        Seed for the random number generator.
+     * \return            Multimap from fitness to knowledge base.
+     */
+    static auto evolve(self_type initial, mutate_function const& mut, fitness_function const& fit,
+      std::function<bool(size_t, double)> const& stop,
+      data_matrix<input_type, id_type> const& training, size_t const pop_size = 1000,
+      size_t const elites = 50, size_t const seed = 42) -> pair<self_type, double>;
+
+   private:
+    rules_type m_rules;
+    interpretation_type m_i;
+
+   public:
     class interpretation {
      public:
       /**
@@ -184,11 +228,7 @@ namespace cj {
        * \param a       Input value where the fuzzy sets begin.
        * \param b       Input value where the fuzzy sets end.
        */
-      auto add_triangular_sets(string const& name, size_t nsets, input_type a, input_type b) -> void {
-        m_names.push_back(name);
-        m_partitions.push_back(make_triangles(nsets, a, b));
-        m_labels.push_back(make_labels(nsets));
-      }
+      auto add_triangular_sets(string const& name, size_t nsets, input_type a, input_type b) -> void;
 
       /**
        * \brief Number of input variables.
@@ -239,12 +279,12 @@ namespace cj {
         return m_labels.at(n).at(s);
       }
 
-      auto partition_name(id_type n) const -> vector<string> const& {
+      /**
+       * \brief Name given to the parition (the fuzzy sets) associated with an input.
+       * E.g.: Triangular may be used for triangular partitions.
+       */
+      auto partition_name(id_type n) const -> string const& {
         return m_partition_names.at(n);
-      }
-
-      auto partition_name(id_type n, id_type p) const -> string const& {
-        return m_partition_names.at(n).at(p);
       }
 
       /**
@@ -268,17 +308,18 @@ namespace cj {
         return m_partitions.at(n).at(s)(x);
       }
 
+      /**
+       * \brief Shows a summary of the input and output variables.
+       */
+      auto summary(std::ostream& os) -> std::ostream&;
+
      private:
       vector<string> m_input_names; // Names of the variables (for the antecedants) given their id.
       vector<vector<string>> m_labels; // Name of the linguistic variables for each input variable.
       vector<vector<std::function<truth_type(input_type)>>> m_partitions; // Partition for each variable.
-      vector<vector<string>> m_partition_names; // Name of the partitions (e.g.: Triangle blah blah, Gaussian, ...).
+      vector<string> m_partition_names; // Name of the partitions (e.g.: Triangle blah blah, Gaussian, ...).
       vector<string> m_categories; // Name of the categories (output).
     };
-
-   private:
-    rules_type m_rules;
-    interpretation_type m_i;
   };
 
   template<typename Truth, typename Input, typename Id>
@@ -317,11 +358,11 @@ namespace cj {
 
   template<typename Truth, typename Input, typename Id>
   auto fuzzy_classifier<Truth, Input, Id>::evaluate(vector<input_type> const& row) -> id_type {
-    auto truth_by_classes = vector<truth_type>(m_i->num_classes(), truth_trait<truth_type>::zero);
+    auto truth_by_classes = vector<truth_type>(m_i->num_categories(), truth_type{0});
     for (auto const& rule : m_rules) {
-      auto truth = truth_trait<truth_type>::unit;
+      auto truth = truth_type{1};
       for (auto const& v : rule.first) {
-        truth = truth && m_i.get(v.first, v.second, row.at(v.first));
+        truth = truth && m_i->get(v.first, v.second, row.at(v.first));
       }
       truth_by_classes[rule.second] = truth_by_classes[rule.second] || truth;
     }
@@ -329,23 +370,95 @@ namespace cj {
   }
 
   template<typename Truth, typename Input, typename Id>
-  auto fuzzy_classifier<Truth, Input, Id>::evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double> {
-    auto results = confusion<size_t, double>{m_i->num_classes()};
+  auto fuzzy_classifier<Truth, Input, Id>::evaluate_all(data_matrix<input_type, id_type> const& dm)
+      -> confusion<size_t, double> {
+    auto results = confusion<size_t, double>{m_i->num_categories()};
     for (auto const& row : dm) {
-      auto predicted = evaluate(row.first);
-      results.add_count(predicted, row.second);
+      results.add_count(evaluate(row.first), row.second);
     }
     return results;
   }
 
   template<typename Truth, typename Input, typename Id>
-  auto show_rule(std::ostream& os, typename fuzzy_classifier<Truth, Input, Id>::rule_type const& p, typename fuzzy_classifier<Truth, Input, Id>::interpretation_ptr f) -> void;
+  auto fuzzy_classifier<Truth, Input, Id>::evolve(self_type initial, mutate_function const& mut, fitness_function const& fit,
+      std::function<bool(size_t, double)> const& stop,
+      data_matrix<input_type, id_type> const& training, size_t const pop_size, size_t const elites,
+      size_t const seed) -> pair<self_type, double> {
+
+    auto const non_elites = pop_size - elites;
+    auto rng = std::mt19937_64(seed);
+
+    // Creates the initial population of solutions:
+    auto population = vector<self_type>(pop_size, initial);
+    auto fitnesses = bounded_multimap<double, size_t>{{fit(initial, training), 0}};
+
+    for (auto t = size_t{0}; !stop(t, fitnesses.maximum_key()); ++t) {
+      // Mutates and store fitness:
+      for (auto p = size_t{0}; p < pop_size; ++p) {
+        mutate(population[p], rng);
+        fitnesses.try_insert(fit(population[p], training), p);
+      }
+      auto const fittest = fitnesses.set_of_values();
+      for (auto p = size_t{0}; p < pop_size; ++p) {
+        // Only mate the non-elites:
+        if (fittest.find(p) == fittest.end()) {
+          auto const parents = pick_unique_pair(fittest, rng);
+//          population[p] = union_split(parents[0], parents[1], rng);
+        }
+      }
+      // Mate
+      // Select
+    }
+
+    return {population[fitnesses.maximum().second], fitnesses.maximum_key()};
+  }
 
   template<typename Truth, typename Input, typename Id>
-  auto operator<<(std::ostream& os, typename fuzzy_classifier<Truth, Input, Id>::interpretation const& i) -> std::ostream&;
+  auto fuzzy_classifier<Truth, Input, Id>::interpretation::add_triangular_sets(string const& name,
+      size_t nsets, input_type a, input_type b) -> void {
+    m_input_names.push_back(name);
+    m_partitions.push_back(make_triangles(nsets, a, b, truth_type{0}, truth_type{1}));
+    m_partition_names.push_back("Triangular_{" + boost::lexical_cast<string>(nsets) + "}("
+      + boost::lexical_cast<string>(a) + ", " + boost::lexical_cast<string>(b) + ")");
+    m_labels.push_back(make_labels(nsets));
+  }
 
   template<typename Truth, typename Input, typename Id>
-  auto operator<<(std::ostream& os, fuzzy_classifier<Truth, Input, Id> const& k) -> std::ostream&;
+  auto show_rule(std::ostream& os, typename fuzzy_classifier<Truth, Input, Id>::rule_type const& p,
+      typename fuzzy_classifier<Truth, Input, Id>::interpretation const* i) -> void {
+    if (p.first.size()) {
+      auto it = p.first.begin();
+      os << "If " << i->input_name(it->first) << ' ' << i->label(it->first, it->second);
+      ++it;
+      for (; it != p.first.end(); ++it) {
+        os << " and " << i->input_name(it->first) << ' ' << i->label(it->first, it->second);
+      }
+      os << " then " << i->category_name(p.second);
+    }
+  }
+
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::interpretation::summary(std::ostream& os)
+      -> std::ostream& {
+    os << "Input variables:\n";
+    for (auto n = 0u; n < num_input(); ++n) {
+      os << "  " << n << ": " << input_name(n) << " :: " << partition_name(n) << '\n';
+    }
+    os << "\nCategories (output):\n";
+    for (auto n = 0u; n < num_categories(); ++n) {
+      os << "  " << n << ": " << category_name(n) << '\n';
+    }
+    return os;
+  }
+
+  template<typename Truth, typename Input, typename Id>
+  auto operator<<(std::ostream& os, fuzzy_classifier<Truth, Input, Id> const& c) -> std::ostream& {
+    for (auto const& r : c) {
+      show_rule<Truth, Input, Id>(os, r, c.get_raw_interpretation());
+      os << '\n';
+    }
+    return os;
+  }
 
 } /* end namespace cj */
 

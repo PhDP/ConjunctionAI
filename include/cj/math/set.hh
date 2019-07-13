@@ -37,13 +37,28 @@ namespace cj {
   };
 
   template<typename Key, typename Value>
+  struct map_trait<flat_multimap<Key, Value>> {
+    using set_type = flat_multiset<Key>;
+  };
+
+  template<typename Key, typename Value>
   struct map_trait<ordered_map<Key, Value>> {
     using set_type = ordered_set<Key>;
   };
 
   template<typename Key, typename Value>
+  struct map_trait<ordered_multimap<Key, Value>> {
+    using set_type = ordered_multiset<Key>;
+  };
+
+  template<typename Key, typename Value>
   struct map_trait<unordered_map<Key, Value>> {
     using set_type = unordered_set<Key>;
+  };
+
+  template<typename Key, typename Value>
+  struct map_trait<unordered_multimap<Key, Value>> {
+    using set_type = unordered_multiset<Key>;
   };
 
   template<typename T>
@@ -52,12 +67,22 @@ namespace cj {
   };
 
   template<typename T>
-  struct is_ordered_set<flat_set<T> {
+  struct is_ordered_set<flat_set<T>> {
     const static bool value = true;
   };
 
   template<typename T>
-  struct is_ordered_set<ordered_set<T> {
+  struct is_ordered_set<flat_multiset<T>> {
+    const static bool value = true;
+  };
+
+  template<typename T>
+  struct is_ordered_set<ordered_set<T>> {
+    const static bool value = true;
+  };
+
+  template<typename T>
+  struct is_ordered_set<ordered_multiset<T>> {
     const static bool value = true;
   };
 

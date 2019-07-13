@@ -17,7 +17,7 @@ namespace cj {
    * \brief Split a string given a deliminator, into a vector of strings.
    */
   inline auto split(string const& s, char delim) -> vector<string> {
-    std::stringstream ss(s);
+    auto ss = std::stringstream(s);
     auto tks = vector<string>{};
     auto item = string{};
     while (std::getline(ss, item, delim)) {
@@ -30,7 +30,7 @@ namespace cj {
    * \brief Reads an entire file into a single string.
    */
   inline auto read_file(char const* filename) -> std::optional<string> {
-    std::ifstream in(filename, std::ios::in | std::ios::binary);
+    auto in = std::ifstream(filename, std::ios::in | std::ios::binary);
     if (in) {
       auto contents = string{};
       in.seekg(0, std::ios::end);
@@ -54,7 +54,7 @@ namespace cj {
    * \brief Creates a lowercase copy of a string.
    */
   inline auto to_lower_cpy(string const& s) -> string {
-    string cpy = s;
+    auto cpy = string{s};
     for (auto i = 0u; i < cpy.size(); ++i) {
       cpy[i] = std::tolower(cpy[i]);
     }
