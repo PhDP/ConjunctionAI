@@ -30,9 +30,9 @@ namespace cj {
     return u;
   }
 
-  template<typename Container>
-  auto pick_unique_pair(Container const& c, std::mt19937_64& rng) -> std::array<typename Container::value_type, 2> {
-    auto idx = unique_integers(2, size_t{0}, c.size());
+  template<typename Container, typename Rng>
+  auto pick_unique_pair(Container const& c, Rng& rng) -> std::array<typename Container::value_type, 2> {
+    auto idx = unique_integers(2, size_t{0}, c.size(), rng);
     return {get(c, get(idx, 0)), get(c, get(idx, 1))};
   }
 

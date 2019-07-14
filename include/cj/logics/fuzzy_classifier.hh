@@ -13,7 +13,7 @@
 #include "cj/math/statistics.hh"
 #include "cj/data/data_matrix.hh"
 #include "cj/utils/bounded_multimap.hh"
-//#include "cj/math/set.hh"
+#include "cj/math/set.hh"
 
 namespace cj {
 
@@ -205,9 +205,9 @@ namespace cj {
      * \return            Multimap from fitness to knowledge base.
      */
     static auto evolve(self_type initial, mutate_function const& mut, fitness_function const& fit,
-      std::function<bool(size_t, double)> const& stop,
+      std::function<bool(double)> const& stop,
       data_matrix<input_type, id_type> const& training, size_t const pop_size = 1000,
-      size_t const elites = 50, size_t const seed = 42) -> pair<self_type, double>;
+      size_t const elites = 50, size_t const t_max = 1000, size_t const seed = 42) -> pair<self_type, double>;
 
    private:
     rules_type m_rules;
@@ -381,36 +381,37 @@ namespace cj {
 
   template<typename Truth, typename Input, typename Id>
   auto fuzzy_classifier<Truth, Input, Id>::evolve(self_type initial, mutate_function const& mut, fitness_function const& fit,
-      std::function<bool(size_t, double)> const& stop,
+      std::function<bool(double)> const& stop,
       data_matrix<input_type, id_type> const& training, size_t const pop_size, size_t const elites,
-      size_t const seed) -> pair<self_type, double> {
+      size_t const t_max, size_t const seed) -> pair<self_type, double> {
 
     auto const non_elites = pop_size - elites;
     auto rng = std::mt19937_64(seed);
 
     // Creates the initial population of solutions:
-    auto population = vector<self_type>(pop_size, initial);
+    auto pop = vector<self_type>(pop_size, initial);
     auto fitnesses = bounded_multimap<double, size_t>{{fit(initial, training), 0}};
 
-    for (auto t = size_t{0}; !stop(t, fitnesses.maximum_key()); ++t) {
+    for (auto t = size_t{0}; t < t_max; ++t) {
       // Mutates and store fitness:
       for (auto p = size_t{0}; p < pop_size; ++p) {
-        mutate(population[p], rng);
-        fitnesses.try_insert(fit(population[p], training), p);
+        mutate(pop[p], rng);
+        fitnesses.try_insert(fit(pop[p], training), p);
+      }
+      if (stop(fitnesses.maximum_key())) {
+        break;
       }
       auto const fittest = fitnesses.set_of_values();
+      // Only mate the non-elites, keep the elites untouched:
       for (auto p = size_t{0}; p < pop_size; ++p) {
-        // Only mate the non-elites:
         if (fittest.find(p) == fittest.end()) {
           auto const parents = pick_unique_pair(fittest, rng);
-//          population[p] = union_split(parents[0], parents[1], rng);
+          pop[p] = map_intersection_split_union(pop[parents[0]].rules(), pop[parents[1]].rules(), rng);
         }
       }
-      // Mate
-      // Select
     }
 
-    return {population[fitnesses.maximum().second], fitnesses.maximum_key()};
+    return {pop[fitnesses.maximum().second], fitnesses.maximum_key()};
   }
 
   template<typename Truth, typename Input, typename Id>
