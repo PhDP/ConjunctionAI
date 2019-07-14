@@ -380,8 +380,8 @@ namespace cj {
   }
 
   template<typename Truth, typename Input, typename Id>
-  auto fuzzy_classifier<Truth, Input, Id>::evolve(self_type initial, mutate_function const& mut, fitness_function const& fit,
-      std::function<bool(double)> const& stop,
+  auto fuzzy_classifier<Truth, Input, Id>::evolve(self_type initial, mutate_function const& mut,
+      fitness_function const& fit, std::function<bool(double)> const& stop,
       data_matrix<input_type, id_type> const& training, size_t const pop_size, size_t const elites,
       size_t const t_max, size_t const seed) -> pair<self_type, double> {
 
@@ -410,7 +410,6 @@ namespace cj {
         }
       }
     }
-
     return {pop[fitnesses.maximum().second], fitnesses.maximum_key()};
   }
 

@@ -131,6 +131,102 @@ TEST(CJSet, UnorderedSetIntersection) {
   EXPECT_EQ((cj::unordered_set<char>{'z', 'a'}), cj::set_intersection(cj::unordered_set<char>{'a', 'z', 'd', 'e'}, cj::unordered_set<char>{'h', 'i', 'z', 'a'}));
 }
 
+TEST(CJSet, OrderedSetHasEmptyIntersectionTwoEmptySets) {
+  EXPECT_TRUE(cj::empty_set_intersection(cj::ordered_set<int>{}, cj::ordered_set<int>{}));
+}
+
+TEST(CJSet, OrderedSetHasEmptyIntersectionLeftEmptySets) {
+  EXPECT_TRUE(cj::empty_set_intersection(cj::flat_set<size_t>{}, cj::flat_set<size_t>{1, 2, 3, 3}));
+}
+
+TEST(CJSet, OrderedSetHasEmptyIntersectionRightEmptySets) {
+  EXPECT_TRUE(cj::empty_set_intersection(cj::ordered_set<int>{0, -5, 8, -5, 2}, cj::ordered_set<int>{}));
+}
+
+TEST(CJSet, OrderedSetHasEmptyIntersection) {
+  EXPECT_FALSE(cj::empty_set_intersection(cj::flat_set<char>{'a', 'z', 'd', 'e'}, cj::flat_set<char>{'h', 'i', 'z', 'a'}));
+}
+
+TEST(CJSet, UnorderedSetHasEmptyIntersectionTwoEmptySets) {
+  EXPECT_TRUE(cj::empty_set_intersection(cj::unordered_set<int>{}, cj::unordered_set<int>{}));
+}
+
+TEST(CJSet, UnorderedSetHasEmptyIntersectionLeftEmptySets) {
+  EXPECT_TRUE(cj::empty_set_intersection(cj::unordered_set<size_t>{}, cj::unordered_set<size_t>{1, 2, 3, 3}));
+}
+
+TEST(CJSet, UnorderedSetHasEmptyIntersectionRightEmptySets) {
+  EXPECT_TRUE(cj::empty_set_intersection(cj::unordered_set<int>{0, -5, 8, -5, 2}, cj::unordered_set<int>{}));
+}
+
+TEST(CJSet, UnorderedSetHasEmptyIntersection) {
+  EXPECT_FALSE(cj::empty_set_intersection(cj::unordered_set<char>{'a', 'z', 'd', 'e'}, cj::unordered_set<char>{'h', 'i', 'z', 'a'}));
+}
+
+TEST(CJSet, OrderedSetDifferenceSizeTwoEmptySets) {
+  EXPECT_EQ(0, cj::set_difference_size(cj::ordered_set<int>{}, cj::ordered_set<int>{}));
+}
+
+TEST(CJSet, OrderedSetDifferenceSizeLeftEmptySets) {
+  EXPECT_EQ(0, cj::set_difference_size(cj::flat_set<size_t>{}, cj::flat_set<size_t>{1, 2, 3, 3}));
+}
+
+TEST(CJSet, OrderedSetDifferenceSizeRightEmptySets) {
+  EXPECT_EQ(4, cj::set_difference_size(cj::ordered_set<int>{0, -5, 8, -5, 2}, cj::ordered_set<int>{}));
+}
+
+TEST(CJSet, OrderedSetDifferenceSize) {
+  EXPECT_EQ(2, cj::set_difference_size(cj::flat_set<char>{'a', 'z', 'd', 'e'}, cj::flat_set<char>{'h', 'i', 'z', 'a'}));
+}
+
+TEST(CJSet, UnorderedSetDifferenceSizeTwoEmptySets) {
+  EXPECT_EQ(0, cj::set_difference_size(cj::unordered_set<int>{}, cj::unordered_set<int>{}));
+}
+
+TEST(CJSet, UnorderedSetDifferenceSizeLeftEmptySets) {
+  EXPECT_EQ(0, cj::set_difference_size(cj::unordered_set<size_t>{}, cj::unordered_set<size_t>{1, 2, 3, 3}));
+}
+
+TEST(CJSet, UnorderedSetDifferenceSizeRightEmptySets) {
+  EXPECT_EQ(4, cj::set_difference_size(cj::unordered_set<int>{0, -5, 8, -5, 2}, cj::unordered_set<int>{}));
+}
+
+TEST(CJSet, UnorderedSetDifferenceSize) {
+  EXPECT_EQ(2, cj::set_difference_size(cj::unordered_set<char>{'a', 'z', 'd', 'e'}, cj::unordered_set<char>{'h', 'i', 'z', 'a'}));
+}
+
+TEST(CJSet, OrderedSetDifferenceTwoEmptySets) {
+  EXPECT_EQ((cj::ordered_set<int>{}), cj::set_difference(cj::ordered_set<int>{}, cj::ordered_set<int>{}));
+}
+
+TEST(CJSet, OrderedSetDifferenceLeftEmptySets) {
+  EXPECT_EQ((cj::flat_set<size_t>{}), cj::set_difference(cj::flat_set<size_t>{}, cj::flat_set<size_t>{1, 2, 3, 3}));
+}
+
+TEST(CJSet, OrderedSetDifferenceRightEmptySets) {
+  EXPECT_EQ((cj::ordered_set<int>{0, 2, -5, 8}), cj::set_difference(cj::ordered_set<int>{0, -5, 8, -5, 2}, cj::ordered_set<int>{}));
+}
+
+TEST(CJSet, OrderedSetDifference) {
+  EXPECT_EQ((cj::flat_set<char>{'d', 'e'}), cj::set_difference(cj::flat_set<char>{'a', 'z', 'd', 'e'}, cj::flat_set<char>{'h', 'i', 'z', 'a'}));
+}
+
+TEST(CJSet, UnorderedSetDifferenceTwoEmptySets) {
+  EXPECT_EQ((cj::unordered_set<int>{}), cj::set_difference(cj::unordered_set<int>{}, cj::unordered_set<int>{}));
+}
+
+TEST(CJSet, UnorderedSetDifferenceLeftEmptySets) {
+  EXPECT_EQ((cj::unordered_set<size_t>{}), cj::set_difference(cj::unordered_set<size_t>{}, cj::unordered_set<size_t>{1, 2, 3, 3}));
+}
+
+TEST(CJSet, UnorderedSetDifferenceRightEmptySets) {
+  EXPECT_EQ((cj::unordered_set<int>{0, 2, -5, 8}), cj::set_difference(cj::unordered_set<int>{0, -5, 8, -5, 2}, cj::unordered_set<int>{}));
+}
+
+TEST(CJSet, UnorderedSetDifference) {
+  EXPECT_EQ((cj::unordered_set<char>{'d', 'e'}), cj::set_difference(cj::unordered_set<char>{'a', 'z', 'd', 'e'}, cj::unordered_set<char>{'h', 'i', 'z', 'a'}));
+}
+
 TEST(CJSet, SetIntersectionSplitUnion) {
   auto dist = std::uniform_int_distribution<size_t>(0, 6);
   auto rng = std::mt19937_64(42);

@@ -11,12 +11,12 @@ namespace cj {
 
   /**
    * \brief Generates n unique integers within a range (not including 'end'). If the range is smaller
-   * than n, return the entire range.
+   *        than n, return the entire range.
    */
   template<typename Integer, typename Rng, template<typename...> class SetType = flat_set>
   auto unique_integers(size_t n, Integer begin, Integer end, Rng& rng) noexcept -> SetType<Integer> {
     auto u = SetType<Integer>{};
-    if (end < begin + 1) { // WRONGGGGGGGGGGGGGGGGGGGG!!!!!
+    if (end <= begin) {
       return u;
     }
     auto dist = std::uniform_int_distribution<Integer>(begin, end - 1);
@@ -30,6 +30,9 @@ namespace cj {
     return u;
   }
 
+  /**
+   * \brief Pick two distinct elements from a container.
+   */
   template<typename Container, typename Rng>
   auto pick_unique_pair(Container const& c, Rng& rng) -> std::array<typename Container::value_type, 2> {
     auto idx = unique_integers(2, size_t{0}, c.size(), rng);

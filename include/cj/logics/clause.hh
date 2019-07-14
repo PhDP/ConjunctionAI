@@ -1,16 +1,5 @@
 /**
- * Summary
- * -------
- * Generic classes for clauses and clausal knowledge bases. Many algorithms in first-order logic
- * begin with converting the formulas into their disjunctive or conjunctive normal forms (DNF, CNF).
- *
- * Types
- * -------
- * **clause**
- * **clausal_kb**
- * **weighted_clausal_kb**
- * **clause_kind**
- *
+ * \brief
  */
 #ifndef CJ_CLAUSE_HH_
 #define CJ_CLAUSE_HH_

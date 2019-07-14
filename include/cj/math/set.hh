@@ -1,25 +1,5 @@
 /**
- * # Summary
- *
- * # Type traits
- *
- * **map_trait**:
- * **set_trait**:
- * **is_ordered_set**:
- *
- * # Functions
- *
- * Each function have specialization for ordered and unordered sets:
- *
- * set_union(SET const&, SET const&) -> SET;
- * set_intersection(SET const&, SET const&) -> SET;
- * set_difference(SET const&, SET const&) -> SET;
- * set_union_size(SET const&, SET const&) -> size_t;
- * set_intersection_size(SET const&, SET const&) -> size_t;
- * set_empty_intersection(SET const&, SET const&) -> size_t;
- * tanimoto() -> size_t;
- * tanomoto_distance() -> size_t;
- *
+ * \brief Type traits for maps/sets, along with traditional set operations (union, intersection, ...).
  */
 #ifndef CJ_SET_HH_
 #define CJ_SET_HH_
@@ -28,6 +8,11 @@
 
 namespace cj {
 
+  /**
+   * \brief The map trait is used to find the corresponding set type to every map, e.g. std::map
+   *        has std::set, boost::container::flat_map has boost::container::flat_set, etc etc.
+   *        Each specialization must define this corresponding set type as "set_type".
+   */
   template<typename Container>
   struct map_trait;
 
@@ -61,6 +46,9 @@ namespace cj {
     using set_type = unordered_multiset<Key>;
   };
 
+  /**
+   * \brief True for ordered sets.
+   */
   template<typename T>
   struct is_ordered_set {
     static const bool value = false;
@@ -112,7 +100,7 @@ namespace cj {
   };
 
   /**
-   * \brief Returns the size of the union of two ordered sets.
+   * \brief Returns the size of the union of two sets.
    */
   template<
     typename Set,
@@ -149,7 +137,7 @@ namespace cj {
   }
 
   /**
-   * \brief Returns the size of the union of two unordered sets.
+   * \brief Returns the size of the union of two sets.
    */
   template<
     typename Set,
@@ -166,7 +154,7 @@ namespace cj {
   }
 
   /**
-   * \brief Returns the union of two ordered sets.
+   * \brief Returns the union of two sets.
    */
   template<
     typename Set,
@@ -204,7 +192,7 @@ namespace cj {
   }
 
   /**
-    \brief Returns the union of two unordered sets.
+    \brief Returns the union of two sets.
    */
   template<
     typename Set,
@@ -219,7 +207,7 @@ namespace cj {
   }
 
   /**
-    \brief Returns the size of the intersection two ordered sets.
+    \brief Returns the size of the intersection two sets.
    */
   template<
     typename Set,
@@ -244,7 +232,7 @@ namespace cj {
   }
 
   /**
-    \brief Returns the size of the intersection two unordered sets.
+    \brief Returns the size of the intersection two sets.
    */
   template<
     typename Set,
