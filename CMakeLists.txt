@@ -20,16 +20,6 @@ option(CJ_STATIC_STD        "Links statically to the standard library." OFF)
 option(CJ_SANITIZE          "Adds -fsanitize=address and -fsanitize=undefined flags." OFF)
 option(CJ_NATIVE            "Adds -march=native flag." OFF)
 
-if(CJ_STATIC)
-  set(CJ_LIB_TYPE STATIC)
-  set(CJ_LIB_NAME "cj_static")
-  add_definitions(-DCJ_STATIC_LIBRARY)
-else()
-  set(CJ_LIB_TYPE SHARED)
-  set(CJ_LIB_NAME "cj")
-  add_definitions(-DCJ_SHARED_LIBRARY)
-endif()
-
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON) # Hmmm, not sure about that.
 
 find_package(Threads REQUIRED)
@@ -80,13 +70,11 @@ endif()
 
 # Add subdirectories:
 
-#add_subdirectory(src)
-
 if(CJ_BENCH)
   add_subdirectory(bench)
 endif()
 
-if(CJ_TEST)
+if(CJ_TEST OR CJ_EXAMPLES)
   enable_testing()
   file(COPY data DESTINATION .)
   add_subdirectory(test)

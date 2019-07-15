@@ -72,17 +72,20 @@ namespace cj {
     /**
      * \brief Returns a reference to the data_matrix's headers.
      */
-    auto headers() const noexcept -> vector<string> const& {
+    auto input_names() const noexcept -> vector<string> const& {
       return m_headers;
     }
 
     /**
-     * \brief Returns a reference to the nth header.
+     * \brief Returns the name of the nth input variable.
      */
-    auto header(size_t n) const noexcept -> string const& {
+    auto input_name(size_t n) const noexcept -> string const& {
       return m_headers.at(n);
     }
 
+    /**
+     * \brief Returns the name of the output variable.
+     */
     auto output_name() const noexcept -> string const& {
       return m_output_name;
     }
@@ -197,8 +200,8 @@ namespace cj {
 
   template<typename Input, typename Output>
   auto data_matrix<Input, Output>::split_frame(double prop, std::mt19937_64 &rng) -> data_matrix<Input, Output> {
-    auto new_df = data_matrix<Input, Output>(m_headers);
-    size_t const n = prop * nrows();
+    auto new_df = data_matrix<Input, Output>(m_headers, m_output_name);
+    auto const n = size_t(std::round(prop * nrows()));
     auto const indexes = unique_integers<size_t>(n, size_t(0), nrows(), rng);
     for (auto const i : indexes) {
       new_df.add_row(m_dm[i]);

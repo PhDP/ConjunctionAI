@@ -30,7 +30,7 @@ namespace cj {
     using input_type = Input;
     using id_type = Id;
     using self_type = fuzzy_classifier<truth_type, input_type, id_type>;
-    using interpretation_type = std::shared_ptr<interpretation>;
+    using interpretation_ptr = std::shared_ptr<interpretation>;
     using mutate_function = std::function<void(self_type&, std::mt19937_64&)>;
     using fitness_function = std::function<double(self_type const&, data_matrix<input_type, id_type> const&)>;
     using antecedent_type = flat_map<id_type, id_type>; // Maps an input ID to a fuzzyset ID.
@@ -43,7 +43,7 @@ namespace cj {
      * \brief Builds a fuzzy knowledge base with a pointer to fuzzy_set and (optionally) a set of
      *        intitial rules.
      */
-    fuzzy_classifier(interpretation_type const& i, rules_type const& initial_rules = {})
+    fuzzy_classifier(interpretation_ptr const& i, rules_type const& initial_rules = {})
       : m_i(i), m_rules{initial_rules} {
     }
 
@@ -132,14 +132,14 @@ namespace cj {
     /**
      * \brief Reference to the fuzzy sets used to define this knowledge base.
      */
-    auto get_interpretation() const -> interpretation_type {
+    auto get_interpretation_ptr() const -> interpretation_ptr {
       return m_i;
     }
 
     /**
      * \brief Reference to the fuzzy sets used to define this knowledge base.
      */
-    auto get_raw_interpretation() const -> interpretation const* {
+    auto get_raw_interpretation_ptr() const -> interpretation const* {
       return m_i.get();
     }
 
@@ -185,11 +185,9 @@ namespace cj {
     /**
      * \brief Helper to builds a shared pointer to an interpretation given a vector of categories.
      */
-    static auto make_interpretation(vector<string> categories) -> interpretation_type  {
+    static auto make_interpretation(vector<string> categories) -> interpretation_ptr  {
       return std::make_shared<interpretation>(interpretation{std::move(categories)});
     }
-
-    static auto mate(self_type const& mom, self_type const& dad, std::mt19937_64& rng) -> self_type;
 
     /**
      * \brief ...
@@ -211,7 +209,7 @@ namespace cj {
 
    private:
     rules_type m_rules;
-    interpretation_type m_i;
+    interpretation_ptr m_i;
 
    public:
     class interpretation {
@@ -228,7 +226,7 @@ namespace cj {
        * \param a       Input value where the fuzzy sets begin.
        * \param b       Input value where the fuzzy sets end.
        */
-      auto add_triangular_sets(string const& name, size_t nsets, input_type a, input_type b) -> void;
+      auto add_triangular_partition(string const& name, size_t nsets, input_type a, input_type b) -> void;
 
       /**
        * \brief Number of input variables.
@@ -384,13 +382,18 @@ namespace cj {
       fitness_function const& fit, std::function<bool(double)> const& stop,
       data_matrix<input_type, id_type> const& training, size_t const pop_size, size_t const elites,
       size_t const t_max, size_t const seed) -> pair<self_type, double> {
+    assert(pop_size > 0);
+    assert(pop_size > elites);
+    assert(elites > 0);
+    assert(t_max > 0);
 
     auto const non_elites = pop_size - elites;
     auto rng = std::mt19937_64(seed);
 
     // Creates the initial population of solutions:
     auto pop = vector<self_type>(pop_size, initial);
-    auto fitnesses = bounded_multimap<double, size_t>{{fit(initial, training), 0}};
+    auto fitnesses = bounded_multimap<double, size_t>(elites);
+    fitnesses.try_insert(fit(initial, training), 0);
 
     for (auto t = size_t{0}; t < t_max; ++t) {
       // Mutates and store fitness:
@@ -414,7 +417,7 @@ namespace cj {
   }
 
   template<typename Truth, typename Input, typename Id>
-  auto fuzzy_classifier<Truth, Input, Id>::interpretation::add_triangular_sets(string const& name,
+  auto fuzzy_classifier<Truth, Input, Id>::interpretation::add_triangular_partition(string const& name,
       size_t nsets, input_type a, input_type b) -> void {
     m_input_names.push_back(name);
     m_partitions.push_back(make_triangles(nsets, a, b, truth_type{0}, truth_type{1}));
@@ -454,7 +457,7 @@ namespace cj {
   template<typename Truth, typename Input, typename Id>
   auto operator<<(std::ostream& os, fuzzy_classifier<Truth, Input, Id> const& c) -> std::ostream& {
     for (auto const& r : c) {
-      show_rule<Truth, Input, Id>(os, r, c.get_raw_interpretation());
+      show_rule<Truth, Input, Id>(os, r, c.get_raw_interpretation_ptr());
       os << '\n';
     }
     return os;
@@ -471,7 +474,7 @@ namespace std {
       for (auto const& r : kb) {
         cj::std_hash_combine(seed, r);
       }
-      cj::std_hash_combine(seed, kb.get_interpretation());
+      cj::std_hash_combine(seed, kb.get_interpretation_ptr());
       return seed;
     }
   };

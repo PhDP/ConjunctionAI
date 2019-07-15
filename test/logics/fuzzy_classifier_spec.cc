@@ -7,7 +7,7 @@ TEST(CJFuzzyClassifier, CreatesLukasiewiczInterpretation) {
 
   auto i = classifier::make_interpretation({"No-interaction", "Interaction"});
 
-  i->add_triangular_sets("Body mass", 3, 0.0, 500.0);
+  i->add_triangular_partition("Body mass", 3, 0.0, 500.0);
   EXPECT_EQ(1, i->num_input());
   EXPECT_EQ(3, i->num_partitions(0));
   EXPECT_EQ(2, i->num_categories());
@@ -30,7 +30,7 @@ TEST(CJFuzzyClassifier, CreatesLukasiewiczInterpretation) {
   EXPECT_EQ("is average", i->label(0, 1));
   EXPECT_EQ("is high", i->label(0, 2));
 
-  i->add_triangular_sets("Brain mass", 9, 10.0, 50.0);
+  i->add_triangular_partition("Brain mass", 9, 10.0, 50.0);
   EXPECT_EQ(2, i->num_input());
   EXPECT_EQ(3, i->num_partitions(0));
   EXPECT_EQ(9, i->num_partitions(1));
@@ -54,9 +54,9 @@ TEST(CJFuzzyClassifier, CreatesLukasiewiczClassifier) {
   using classifier = cj::fuzzy_classifier<luka, double>;
 
   auto i = classifier::make_interpretation({"No-interaction", "Interaction"});
-  i->add_triangular_sets("Body mass", 3, 0.0, 500.0);
-  i->add_triangular_sets("Brain mass", 3, 10.0, 50.0);
-  i->add_triangular_sets("Whatever", 3, 0.0, 1.0);
+  i->add_triangular_partition("Body mass", 3, 0.0, 500.0);
+  i->add_triangular_partition("Brain mass", 3, 10.0, 50.0);
+  i->add_triangular_partition("Whatever", 3, 0.0, 1.0);
   auto c = classifier{i};
 
   EXPECT_TRUE(c.empty());
@@ -89,9 +89,9 @@ TEST(CJFuzzyClassifier, EvaluatesDataMatrixFuzzyClassifier) {
   using classifier = cj::fuzzy_classifier<luka, double>;
 
   auto i = classifier::make_interpretation({"No-interaction", "Interaction"});
-  i->add_triangular_sets("Body mass", 3, 0.0, 500.0);
-  i->add_triangular_sets("Brain mass", 3, 10.0, 50.0);
-  i->add_triangular_sets("Whatever", 3, 0.0, 1.0);
+  i->add_triangular_partition("Body mass", 3, 0.0, 500.0);
+  i->add_triangular_partition("Brain mass", 3, 10.0, 50.0);
+  i->add_triangular_partition("Whatever", 3, 0.0, 1.0);
   auto c = classifier{i};
 
   c.add_rule({{0, 2}, {2, 1}}, 0);
