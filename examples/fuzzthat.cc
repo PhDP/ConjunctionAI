@@ -8,6 +8,7 @@
 #include <future>
 #include <ctime>
 #include "cj/logics/fuzzy_classifier.hh"
+#include "cj/utils/cl_reader.hh"
 
 template<typename Truth>
 auto make_interpretation(size_t nsets, cj::data_matrix<double, uint32_t> const& dm)
@@ -27,9 +28,17 @@ auto trial(size_t seed) -> double {
 }
 
 auto main(int argc, char *argv[]) -> int {
-  auto main_rng = std::mt19937_64(42);
-  auto ptest = 0.1; // Proportion reserved for testing.
-  auto logic_name = (argc > 1? cj::string{argv[1]} : cj::string{"Łukasiewicz"});
+  auto logic_name = cj::get_arg<cj::string>(argc, argv, "logic", cj::string{"Łukasiewicz"});
+  auto const seed = cj::get_arg<size_t>(argc, argv, "seed", std::time(0));
+  auto const trials = cj::get_arg<uint32_t>(argc, argv, "trials", 20);
+  auto const nsets = cj::get_arg<uint32_t>(argc, argv, "nsets", 5); // How many fuzzy sets for each variables.
+  auto const pop_size = std::max(cj::get_arg<uint32_t>(argc, argv, "populations", 200), uint32_t{8});
+  auto const elites = std::min(cj::get_arg<uint32_t>(argc, argv, "elites", pop_size / 10), pop_size / 2);
+  auto const nonelites = pop_size - elites;
+  auto const alpha = cj::get_arg<double>(argc, argv, "alpha", 0.0005);
+  auto const ptest = 0.1;
+
+  auto main_rng = std::mt19937_64(seed);
 
   // Make sure the logic's name is valid:
   if (logic_name != "Łukasiewicz") {
@@ -41,6 +50,19 @@ auto main(int argc, char *argv[]) -> int {
       logic_name = "Łukasiewicz";
     }
   }
+
+  std::cout
+    << std::boolalpha
+    << "Parameters:\n"
+    << "  Seed: " << seed << '\n'
+    << "  Trials: " << trials << '\n'
+    << "  Logic: " << logic_name << '\n'
+    << "  Fuzzy sets per input variables: " << nsets << '\n'
+    << "  Population size: " << pop_size << '\n'
+    << "  Elites: " << elites << '\n'
+    << "  Non-elites: " << nonelites << '\n'
+    << "  Complexity penalty (alpha): " << alpha << '\n'
+    << "  Proportion held for testing: " << ptest << '\n';
 
   auto data_ref = cj::data_matrix<double, uint32_t>::from_file("../data/poll_plant/poll.csv");
   if (!data_ref) {
@@ -62,6 +84,10 @@ auto main(int argc, char *argv[]) -> int {
   std::cout
     << "Training data size: " << data.nrows() << '\n'
     << "Testing data size: " << test.nrows() << '\n';
+
+//  auto fitness = [=alpha](auto c, auto d) {
+//    return c.evaluate_all(d).tss(1) - alpha * c.complexity();
+//  };
 
 //  auto main_rng = std::mt19937_64(seed);
 //  auto seed_gen = std::uniform_int_distribution<size_t>{};

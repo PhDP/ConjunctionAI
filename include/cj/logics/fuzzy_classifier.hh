@@ -387,18 +387,23 @@ namespace cj {
     assert(elites > 0);
     assert(t_max > 0);
 
+    auto mutations = std::binomial_distribution<int>(100, 0.03);
+
     auto const non_elites = pop_size - elites;
     auto rng = std::mt19937_64(seed);
 
     // Creates the initial population of solutions:
     auto pop = vector<self_type>(pop_size, initial);
-    auto fitnesses = bounded_multimap<double, size_t>(elites);
+    auto fitnesses = bounded_multimap<double, size_t>(elites); // Maps the highest fitness to the population's index in 'pop'.
     fitnesses.try_insert(fit(initial, training), 0);
 
     for (auto t = size_t{0}; t < t_max; ++t) {
       // Mutates and store fitness:
       for (auto p = size_t{0}; p < pop_size; ++p) {
-        mutate(pop[p], rng);
+        auto const num_mutations = mutations(rng);
+        for (auto m = size_t{0}; m < num_mutations; ++m) {
+          mutate(pop[p], rng);
+        }
         fitnesses.try_insert(fit(pop[p], training), p);
       }
       if (stop(fitnesses.maximum_key())) {

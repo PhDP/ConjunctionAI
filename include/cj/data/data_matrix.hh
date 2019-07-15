@@ -102,6 +102,9 @@ namespace cj {
      */
     auto extract_column(string const& col) const noexcept -> vector<input_type>;
 
+    /**
+     * \brief Get the output associated with a given row.
+     */
     auto get_output(size_t row) const -> output_type {
       return m_dm.at(row).second;
     }
