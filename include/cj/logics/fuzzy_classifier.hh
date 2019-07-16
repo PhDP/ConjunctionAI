@@ -146,12 +146,12 @@ namespace cj {
     /**
      * \brief Generates a prediction (category ID) given a set of input values.
      */
-    auto evaluate(vector<input_type> const& row) -> id_type;
+    auto evaluate(vector<input_type> const& row) const -> id_type;
 
     /**
      * \brief Returns the confusion matrix for a database of (input, category) pairs.
      */
-    auto evaluate_all(data_matrix<input_type, id_type> const& dm) -> confusion<size_t, double>;
+    auto evaluate_all(data_matrix<input_type, id_type> const& dm) const -> confusion<size_t, double>;
 
     /**
      * \brief Returns iterator to the beginning of the rules.
@@ -355,7 +355,7 @@ namespace cj {
   }
 
   template<typename Truth, typename Input, typename Id>
-  auto fuzzy_classifier<Truth, Input, Id>::evaluate(vector<input_type> const& row) -> id_type {
+  auto fuzzy_classifier<Truth, Input, Id>::evaluate(vector<input_type> const& row) const -> id_type {
     auto truth_by_classes = vector<truth_type>(m_i->num_categories(), truth_type{0});
     for (auto const& rule : m_rules) {
       auto truth = truth_type{1};
@@ -369,7 +369,7 @@ namespace cj {
 
   template<typename Truth, typename Input, typename Id>
   auto fuzzy_classifier<Truth, Input, Id>::evaluate_all(data_matrix<input_type, id_type> const& dm)
-      -> confusion<size_t, double> {
+      const -> confusion<size_t, double> {
     auto results = confusion<size_t, double>{m_i->num_categories()};
     for (auto const& row : dm) {
       results.add_count(evaluate(row.first), row.second);
@@ -388,6 +388,7 @@ namespace cj {
     assert(t_max > 0);
 
     auto mutations = std::binomial_distribution<int>(100, 0.03);
+    auto const inter = initial.get_interpretation_ptr();
 
     auto const non_elites = pop_size - elites;
     auto rng = std::mt19937_64(seed);
@@ -402,7 +403,7 @@ namespace cj {
       for (auto p = size_t{0}; p < pop_size; ++p) {
         auto const num_mutations = mutations(rng);
         for (auto m = size_t{0}; m < num_mutations; ++m) {
-          mutate(pop[p], rng);
+          mut(pop[p], rng);
         }
         fitnesses.try_insert(fit(pop[p], training), p);
       }
@@ -414,7 +415,10 @@ namespace cj {
       for (auto p = size_t{0}; p < pop_size; ++p) {
         if (fittest.find(p) == fittest.end()) {
           auto const parents = pick_unique_pair(fittest, rng);
-          pop[p] = map_intersection_split_union(pop[parents[0]].rules(), pop[parents[1]].rules(), rng);
+          pop[p] = self_type {
+            inter,
+            map_intersection_split_union(pop[parents[0]].rules(), pop[parents[1]].rules(), rng)
+          };
         }
       }
     }

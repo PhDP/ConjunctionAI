@@ -14,7 +14,7 @@ template<typename Truth>
 auto make_interpretation(size_t nsets, cj::data_matrix<double, uint32_t> const& dm)
                          -> typename cj::fuzzy_classifier<Truth, double>::interpretation_ptr {
   auto i = cj::fuzzy_classifier<Truth, double>::make_interpretation({"Non-interaction", "Interaction"});
-  i->add_triangular_sets(dm.input_name(0), 2, 0.0, 1.0);
+  i->add_triangular_partition(dm.input_name(0), 2, 0.0, 1.0);
   for (auto h = 1u; h < dm.input_names().size(); ++h) {
     i->add_triangular_partition(dm.input_name(h), nsets, 0.0, 1.0);
   }
@@ -22,9 +22,61 @@ auto make_interpretation(size_t nsets, cj::data_matrix<double, uint32_t> const& 
 }
 
 template<typename Truth>
-auto trial(size_t seed) -> double {
+auto trial(size_t seed, size_t nsets, double alpha, cj::data_matrix<double, uint32_t> const& dm) -> double {
+  using classifier = cj::fuzzy_classifier<Truth, double, uint32_t>;
+  using rule_type = typename classifier::rule_type;
+
   auto rng = std::mt19937_64(seed);
+  auto i = make_interpretation<Truth>(nsets, dm);
+  auto const initial_rule = classifier(i, {{{{0, 0}}, 0}, {{{0, 1}}, 1}});
+
+  auto const mutate = [](classifier& c, std::mt19937_64& rng) {
+    auto unif = std::uniform_real_distribution<double>(0.0, 1.0);
+    auto const prob_rule = 1.0 - 0.8 / (1.0 + std::exp(-double(c.complexity()) / 4 + 3));
+    auto const n = c.get_raw_interpretation_ptr()->num_input(); // Number of input variables
+
+    // Add rule:
+    if (c.size() < 3 || unif(rng) < prob_rule) {
+      // Number of input variables in the new rule:
+      auto const n_input_vars = 1 + unif(rng) * (n - 1);
+      auto rule = rule_type{};
+      for (auto i = 0u; i < n_input_vars; ++i) {
+        auto const input_id = uint32_t(unif(rng) * n);
+        rule.first[input_id] = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_partitions(input_id));
+      }
+      rule.second = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_categories());
+      c.add_rule(rule);
+    } else { // Try modifying existing rule:
+      auto rule = c.pop_random_rule(rng);
+      if (unif(rng) > (1 - prob_rule)) { // Otherwise just left the rule out.
+        if (unif(rng) < (1 / double(n))) { // Mutate category
+          rule.second = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_categories());
+        } else {
+          auto const input_id = uint32_t(unif(rng) * n);
+          if (rule.first.find(input_id) != rule.first.end() && unif(rng) < 0.5) {
+            rule.first.erase(input_id);
+          } else {
+            rule.first[input_id] = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_partitions(input_id));
+          }
+        }
+        c.add_rule(rule);
+      }
+    }
+  };
+
+  auto const fitness = [alpha](classifier const& c, cj::data_matrix<double, uint32_t> const& d) {
+    return c.evaluate_all(d).tss(1) - alpha * c.complexity();
+  };
+
+  auto const stop = [](double fit) { return fit >= 1.0; };
+
+  auto const best = classifier::evolve(initial_rule, mutate, fitness, stop, dm, 200, 40, 100, 42);
+
   return 0.0;
+}
+
+auto parallel_trials(size_t threads) -> double {
+  return 0.0; // TSS
 }
 
 auto main(int argc, char *argv[]) -> int {
@@ -46,7 +98,9 @@ auto main(int argc, char *argv[]) -> int {
       logic_name = "Gödel-Dummett";
     } else if (logic_name == "Product") {
     } else {
-      std::cout << "WARNING: Invalid logic name, defaulting to \"Łukasiewicz\".\n";
+      if (logic_name != "Lukasiewicz") {
+        std::cout << "WARNING: Invalid logic name, defaulting to \"Łukasiewicz\".\n";
+      }
       logic_name = "Łukasiewicz";
     }
   }
@@ -84,6 +138,10 @@ auto main(int argc, char *argv[]) -> int {
   std::cout
     << "Training data size: " << data.nrows() << '\n'
     << "Testing data size: " << test.nrows() << '\n';
+
+  if (logic_name == "Łukasiewicz") {
+    trial<cj::lukasiewicz<double>>(seed, 5, 0.05, data);
+  }
 
 //  auto fitness = [=alpha](auto c, auto d) {
 //    return c.evaluate_all(d).tss(1) - alpha * c.complexity();
