@@ -22,7 +22,8 @@ auto make_interpretation(size_t nsets, cj::data_matrix<double, uint32_t> const& 
 }
 
 template<typename Truth>
-auto trial(size_t seed, size_t nsets, double alpha, cj::data_matrix<double, uint32_t> const& dm) -> double {
+auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alpha, cj::data_matrix<double, uint32_t> const& dm)
+          -> cj::pair<cj::fuzzy_classifier<Truth, double, uint32_t>, double> {
   using classifier = cj::fuzzy_classifier<Truth, double, uint32_t>;
   using rule_type = typename classifier::rule_type;
 
@@ -70,11 +71,10 @@ auto trial(size_t seed, size_t nsets, double alpha, cj::data_matrix<double, uint
 
   auto const stop = [](double fit) { return fit >= 1.0; };
 
-  auto const best = classifier::evolve(initial_rule, mutate, fitness, stop, dm, 200, 40, 100, 42);
-
-  return 0.0;
+  return classifier::evolve(initial_rule, mutate, fitness, stop, dm, pop_size, pop_size / 4, t_max, seed);
 }
 
+template<typename Truth>
 auto parallel_trials(size_t threads) -> double {
   return 0.0; // TSS
 }
@@ -85,8 +85,7 @@ auto main(int argc, char *argv[]) -> int {
   auto const trials = cj::get_arg<uint32_t>(argc, argv, "trials", 20);
   auto const nsets = cj::get_arg<uint32_t>(argc, argv, "nsets", 5); // How many fuzzy sets for each variables.
   auto const pop_size = std::max(cj::get_arg<uint32_t>(argc, argv, "populations", 200), uint32_t{8});
-  auto const elites = std::min(cj::get_arg<uint32_t>(argc, argv, "elites", pop_size / 10), pop_size / 2);
-  auto const nonelites = pop_size - elites;
+  auto const t_max = std::max(cj::get_arg<uint32_t>(argc, argv, "steps", 200), uint32_t{100});
   auto const alpha = cj::get_arg<double>(argc, argv, "alpha", 0.0005);
   auto const ptest = 0.1;
 
@@ -113,8 +112,6 @@ auto main(int argc, char *argv[]) -> int {
     << "  Logic: " << logic_name << '\n'
     << "  Fuzzy sets per input variables: " << nsets << '\n'
     << "  Population size: " << pop_size << '\n'
-    << "  Elites: " << elites << '\n'
-    << "  Non-elites: " << nonelites << '\n'
     << "  Complexity penalty (alpha): " << alpha << '\n'
     << "  Proportion held for testing: " << ptest << '\n';
 
@@ -140,7 +137,7 @@ auto main(int argc, char *argv[]) -> int {
     << "Testing data size: " << test.nrows() << '\n';
 
   if (logic_name == "Łukasiewicz") {
-    trial<cj::lukasiewicz<double>>(seed, 5, 0.05, data);
+    trial<cj::lukasiewicz<double>>(seed, nsets, pop_size, t_max, alpha, data);
   }
 
 //  auto fitness = [=alpha](auto c, auto d) {
