@@ -8,7 +8,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RELEASE")
 endif()
 
-option(CJ_STATIC            "Builds a static library ('cj_static') instead of a shared one ('cj')." OFF)
 option(CJ_CUDA              "Builds CUDA library." OFF)
 option(CJ_TEST              "Builds tests." OFF)
 option(CJ_BENCH             "Builds benchmarks." OFF)
@@ -16,9 +15,9 @@ option(CJ_EXAMPLES          "Builds examples." OFF)
 option(CJ_PYTHON            "Builds Python package." OFF)
 option(CJ_INSTALL_PYTHON    "Creates install target for Python package." OFF)
 option(CJ_PI                "Builds a position-independant library." OFF)
-option(CJ_STATIC_STD        "Links statically to the standard library." OFF)
 option(CJ_SANITIZE          "Adds -fsanitize=address and -fsanitize=undefined flags." OFF)
 option(CJ_NATIVE            "Adds -march=native flag." OFF)
+option(CJ_NO_EXCEPT         "Disable exeptions." OFF)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON) # Hmmm, not sure about that.
 
@@ -56,10 +55,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Optional flags:
 
-if(CJ_STATIC_STD)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
-endif()
-
 if(CJ_SANITIZE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined")
 endif()
@@ -68,10 +63,18 @@ if(CJ_NATIVE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif()
 
+if(CJ_NO_EXCEPT)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+endif()
+
 # Add subdirectories:
 
 if(CJ_BENCH)
   add_subdirectory(bench)
+endif()
+
+if(CJ_TEST OR CJ_EXAMPLES)
+  file(COPY data DESTINATION .)
 endif()
 
 if(CJ_TEST)
@@ -83,17 +86,9 @@ if(CJ_EXAMPLES)
   add_subdirectory(examples)
 endif()
 
-if(CJ_TEST OR CJ_EXAMPLES)
-  file(COPY data DESTINATION .)
-endif()
-
 if(CJ_PYTHON)
   find_package(Python)
-  if(CJ_STATIC AND NOT CJ_PI)
-    message(ERROR "Must have the CJ_PI option ON to build the python module with a static library.")
-  else()
-    add_subdirectory(python)
-  endif()
+  add_subdirectory(python)
 endif()
 
 # Summary:

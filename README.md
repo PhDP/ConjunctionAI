@@ -1,15 +1,17 @@
 <img src='http://phdp.github.io/images/cj-200.png' alt='Conjunction logo' align='right'/>
 
-> **ConjunctionAI is an AI library to reason with clear models. ConjunctionAI achieves this by
-exploring what lies at the intersection of logic, fuzziness, and probability theory.**
+> ConjunctionAI is an AI library to learn and reason with clear models.
+ConjunctionAI achieves this by exploring what lies at the intersection of
+**classical logics**, which are used to formalize mathematics, encode scientific
+theories and complex ideas; **probability theory**, which is used to model
+uncertainty, and lastly **many-valued logic**, which are used to model vagueness
+and serves as an important theoreritcal frameworks to unique classical and
+probabilistic logics.
 
-ConjunctionAI is a C++17 library with a Python package.
+ConjunctionAI is a C++17 template library with a Python interface (and maybe an
+R one in the near future).
 
 ## Code organization
-
-All files directly in *include/cj* represent different mathematical objects or logics (except
-*common.hh*). Each of these files begin with a detailed summary and list of classes/functions,
-followed by, of course, the code for these classes/functions.
 
 Math objects:
 
@@ -69,6 +71,14 @@ ceres, eigen) should work on Windows, however it is currently untested.
     $ cmake ..
     $ make
     $ sudo make install
+
+## Style guide
+
+The project mostly follows [LLVM's style guide](https://llvm.org/docs/CodingStandards.html) with the
+following notes:
+
+    * auto all the things!
+    * Indention is two spaces, including namespaces. Half-indent 'private/public/protected' qualifiers.
 
 ## License
 
