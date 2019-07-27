@@ -6,12 +6,14 @@
 #define CJ_BOUNDED_MULTIMAP_HH_
 
 #include "cj/common.hh"
+#include "cj/math/set.hh"
 
 namespace cj {
 
   /**
-   * \brief A multimap that accepts only a fixed number of elements. Will remove the smallest
-   *        (key, value) pair when largest keys are being inserted and the container is full.
+   * \brief A multimap that accepts only a fixed number of elements. Will remove
+   *        the smallest (key, value) pair when largest keys are being inserted
+   *        and the container is full.
    */
   template<
     typename Key,
@@ -23,6 +25,10 @@ namespace cj {
     using mapped_type = T;
     using value_type = pair<const key_type, mapped_type>;
     using multimap_type = Multimap<key_type, mapped_type>;
+    using key_set_type = typename map_traits<multimap_type>::key_set_type;
+    using key_multiset_type = typename map_traits<multimap_type>::key_multiset_type;
+    using value_set_type = typename map_traits<multimap_type>::value_set_type;
+    using value_multiset_type = typename map_traits<multimap_type>::value_multiset_type;
     using const_iterator = typename multimap_type::const_iterator;
     using const_reverse_iterator = typename multimap_type::const_reverse_iterator;
 
@@ -73,14 +79,24 @@ namespace cj {
     auto try_insert(key_type const& k, mapped_type const& m) -> bool;
 
     /**
+     * \brief Returns the set of keys in the container.
+     */
+    auto set_of_keys() const -> key_set_type;
+
+    /**
+     * \brief Returns the multiset of keys in the container.
+     */
+    auto multiset_of_keys() const -> key_multiset_type;
+
+    /**
      * \brief Returns the set of values (mapped_type).
      */
-    auto set_of_values() const -> ordered_set<mapped_type>;
+    auto set_of_values() const -> value_set_type;
 
     /**
      * \brief Returns the multiset of values (mapped_type).
      */
-    auto multiset_of_values() const -> ordered_multiset<mapped_type>;
+    auto multiset_of_values() const -> value_multiset_type;
 
     /**
      * \brief Returns the number of elements matching specific key.
@@ -116,7 +132,6 @@ namespace cj {
     auto maximum() const -> value_type const& {
       return *m_values.rbegin();
     }
-
 
     /**
      * \brief Largest key.
@@ -158,8 +173,8 @@ namespace cj {
     size_t m_max_size;
   };
 
-  template<typename Key, typename T, template<typename, typename...> typename Multimap>
-  auto bounded_multimap<Key, T, Multimap>::try_insert(key_type const& k, mapped_type const& m) -> bool {
+  template<typename K, typename T, template<typename, typename...> typename M>
+  auto bounded_multimap<K, T, M>::try_insert(key_type const& k, mapped_type const& m) -> bool {
     if (m_values.size() < m_max_size) {
       m_values.insert(value_type(k, m));
       return true;
@@ -171,18 +186,36 @@ namespace cj {
     return false;
   }
 
-  template<typename Key, typename T, template<typename, typename...> typename Multimap>
-  auto bounded_multimap<Key, T, Multimap>::set_of_values() const -> ordered_set<mapped_type> {
-    auto s = ordered_set<mapped_type>{};
+  template<typename K, typename T, template<typename, typename...> typename M>
+  auto bounded_multimap<K, T, M>::set_of_keys() const -> key_set_type {
+    auto s = key_set_type{};
+    for (auto const& elem : m_values) {
+      s.insert(elem.first);
+    }
+    return s;
+  }
+
+  template<typename K, typename T, template<typename, typename...> typename M>
+  auto bounded_multimap<K, T, M>::multiset_of_keys() const -> key_multiset_type {
+    auto s = key_multiset_type{};
+    for (auto const& elem : m_values) {
+      s.insert(elem.first);
+    }
+    return s;
+  }
+
+  template<typename K, typename T, template<typename, typename...> typename M>
+  auto bounded_multimap<K, T, M>::set_of_values() const -> value_set_type {
+    auto s = value_set_type{};
     for (auto const& elem : m_values) {
       s.insert(elem.second);
     }
     return s;
   }
 
-  template<typename Key, typename T, template<typename, typename...> typename Multimap>
-  auto bounded_multimap<Key, T, Multimap>::multiset_of_values() const -> ordered_multiset<mapped_type> {
-    auto s = ordered_multiset<mapped_type>{};
+  template<typename K, typename T, template<typename, typename...> typename M>
+  auto bounded_multimap<K, T, M>::multiset_of_values() const -> value_multiset_type {
+    auto s = value_multiset_type{};
     for (auto const& elem : m_values) {
       s.insert(elem.second);
     }

@@ -21,19 +21,17 @@ namespace cj {
    *
    */
   template<
-    template Weight = double,
+    typename Weight = double,
     template<typename...> template Set = unordered_set,
     template<typename, typename...> template Map = unordered_map>
   class markov_logic_kb {
    public:
-    interpretation;
-
     using weight_type = Weight;
     using hard_kb_type = Set<fol_type>;
     using prob_kb_type = Map<fol_type, weight_type>;
     using soft_kb_type = Map<soft_formula, weight_type>;
 
-    markov_logic_kb();
+    markov_logic_kb() { }
 
     auto empty() const -> bool {
       return hard_kb.empty() && prob_kb.empty() && soft_kb.empty();
@@ -67,13 +65,10 @@ namespace cj {
       return soft_kb.end();
     }
 
-    class interpretation {
-    };
-
    private:
-    hard_kb_type hard_kb;
-    prob_kb_type prob_kb;
-    soft_kb_type soft_kb;
+    hard_kb_type m_hard_kb;
+    prob_kb_type m_prob_kb;
+    soft_kb_type m_soft_kb;
     interpretation_type m_i;
   };
 

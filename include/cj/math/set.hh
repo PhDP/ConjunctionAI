@@ -14,36 +14,54 @@ namespace cj {
    *        Each specialization must define this corresponding set type as "set_type".
    */
   template<typename Container>
-  struct map_trait;
+  struct map_traits;
 
   template<typename Key, typename Value>
-  struct map_trait<flat_map<Key, Value>> {
-    using set_type = flat_set<Key>;
+  struct map_traits<flat_map<Key, Value>> {
+    using key_set_type = flat_set<Key>;
+    using key_multiset_type = flat_multiset<Key>;
+    using value_set_type = flat_set<Value>;
+    using value_multiset_type = flat_multiset<Value>;
   };
 
   template<typename Key, typename Value>
-  struct map_trait<flat_multimap<Key, Value>> {
-    using set_type = flat_multiset<Key>;
+  struct map_traits<flat_multimap<Key, Value>> {
+    using key_set_type = flat_set<Key>;
+    using key_multiset_type = flat_multiset<Key>;
+    using value_set_type = flat_set<Value>;
+    using value_multiset_type = flat_multiset<Value>;
   };
 
   template<typename Key, typename Value>
-  struct map_trait<ordered_map<Key, Value>> {
-    using set_type = ordered_set<Key>;
+  struct map_traits<ordered_map<Key, Value>> {
+    using key_set_type = ordered_set<Key>;
+    using key_multiset_type = ordered_multiset<Key>;
+    using value_set_type = ordered_set<Value>;
+    using value_multiset_type = ordered_multiset<Value>;
   };
 
   template<typename Key, typename Value>
-  struct map_trait<ordered_multimap<Key, Value>> {
-    using set_type = ordered_multiset<Key>;
+  struct map_traits<ordered_multimap<Key, Value>> {
+    using key_set_type = ordered_set<Key>;
+    using key_multiset_type = ordered_multiset<Key>;
+    using value_set_type = ordered_set<Value>;
+    using value_multiset_type = ordered_multiset<Value>;
   };
 
   template<typename Key, typename Value>
-  struct map_trait<unordered_map<Key, Value>> {
-    using set_type = unordered_set<Key>;
+  struct map_traits<unordered_map<Key, Value>> {
+    using key_set_type = unordered_set<Key>;
+    using key_multiset_type = unordered_multiset<Key>;
+    using value_set_type = unordered_set<Value>;
+    using value_multiset_type = unordered_multiset<Value>;
   };
 
   template<typename Key, typename Value>
-  struct map_trait<unordered_multimap<Key, Value>> {
-    using set_type = unordered_multiset<Key>;
+  struct map_traits<unordered_multimap<Key, Value>> {
+    using key_set_type = unordered_set<Key>;
+    using key_multiset_type = unordered_multiset<Key>;
+    using value_set_type = unordered_set<Value>;
+    using value_multiset_type = unordered_multiset<Value>;
   };
 
   /**

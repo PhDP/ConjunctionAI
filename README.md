@@ -1,6 +1,6 @@
 <img src='http://phdp.github.io/images/cj-200.png' alt='Conjunction logo' align='right'/>
 
-> ConjunctionAI is an AI library to learn and reason with clear models.
+ConjunctionAI is an AI library to learn and reason with clear models.
 ConjunctionAI achieves this by exploring what lies at the intersection of
 **classical logics**, which are used to formalize mathematics, encode scientific
 theories and complex ideas; **probability theory**, which is used to model
@@ -16,7 +16,7 @@ R one in the near future).
 Math objects:
 
 | Object          | TLDR;                                                     | Where? |
-| --------------- | --------------------------------------------------------  | ------ |
+| --------------- | --------------------------------------------------------- | ------ |
 | Set             | Standard sets & many type traits used across all sets     | set.hh |
 | Fuzzy set       | Discrete fuzzy sets                                       | fuzzy_set.hh |
 | Fuzzy partition | Function to generate continuous fuzzy sets to partition an input space | fuzzy_partition.hh |
@@ -77,8 +77,8 @@ ceres, eigen) should work on Windows, however it is currently untested.
 The project mostly follows [LLVM's style guide](https://llvm.org/docs/CodingStandards.html) with the
 following notes:
 
-    * auto all the things!
-    * Indention is two spaces, including namespaces. Half-indent 'private/public/protected' qualifiers.
+* Left-to-right auto/using all the things!
+* Indention is two spaces, including namespaces. Half-indent 'private/public/protected' qualifiers.
 
 ## License
 

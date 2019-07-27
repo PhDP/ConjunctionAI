@@ -383,8 +383,8 @@ namespace cj {
       data_matrix<input_type, id_type> const& training, size_t const pop_size, size_t const elites,
       size_t const t_max, size_t const seed) -> pair<self_type, double> {
     assert(pop_size > 0);
-    assert(pop_size > elites);
     assert(elites > 0);
+    assert(elites < pop_size);
     assert(t_max > 0);
 
     auto mutations = std::binomial_distribution<int>(100, 0.03);
