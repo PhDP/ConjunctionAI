@@ -6,6 +6,7 @@
 
 #include "cj/common.hh"
 #include "cj/utils/string.hh"
+#include "cj/math/set.hh"
 
 namespace cj {
 
@@ -273,46 +274,50 @@ namespace cj {
   }
 
   /**
+   * \brief Different kinds of clauses (disjunctive normal form, conjunctive normal form).
    */
   enum class clause_kind {
     dnf,
     cnf
   };
 
-//  template<
-//    typename T,
-//    typename WeightType = double,
-//    template<typename...> typename SetType = flat_set,
-//    template<typename, typename...> typename MapType = flat_map>
-//  class clausal_kb {
-//   public:
-//    using clause_type = clause<T, SetType>;
-//    using weight_type = WeightType;
-//    using kb_type = MapType<clause_type, weight_type>;
-//    using const_iterator = typename kb_type::const_iterator;
-//
-//    clausal_kb() noexcept;
-//
-//    auto empty() const -> bool;
-//
-//    auto size() const -> size_t;
-//
-//    auto kind() const -> clause_kind { return m_kind; }
-//
+  template<
+    typename A,
+    typename WeightType = double,
+    template<typename...> typename Set = flat_set,
+    template<typename, typename...> typename Map = unordered_map>
+  class clausal_kb {
+   public:
+    using clause_type = clause<A, Set>;
+    using weight_type = WeightType;
+    using prob_kb_type = Map<clause_type, weight_type>;
+    using hard_kb_type = typename map_traits<prob_kb_type>::set_type;
+
+    clausal_kb() noexcept { }
+
+    auto empty() const -> bool {
+      return m_hard.empty() && m_prob.empty();
+    }
+
+    auto size() const -> size_t {
+      return m_hard.size() + m_prob.size();
+    }
+
+    auto kind() const -> clause_kind {
+      return m_kind;
+    }
+
 //    auto tell(formula const& f, weight_type weight = std::numeric_limits<double>::infinity()) -> void;
-//
-//    auto tell(clause_type const& f, weight_type weight = std::numeric_limits<double>::infinity()) -> void;
-//
-//    auto show(std::ostream& os, symbols_map const& s) const -> std::ostream&;
-//
-//    auto begin() const -> const_iterator;
-//
-//    auto end() const -> const_iterator;
-//
-//   private:
-//    kb_type m_kb;
-//    clause_kind m_kind;
-//  };
+
+    auto tell(clause_type const& c);
+
+    auto tell(clause_type const& c, weight_type weight);
+
+   private:
+    hard_kb_type m_hard;
+    prob_kb_type m_prob;
+    clause_kind m_kind;
+  };
 
 } /* end namespace cj */
 
