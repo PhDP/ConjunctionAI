@@ -18,6 +18,8 @@ namespace cj {
 
   template<typename Key, typename Value>
   struct map_traits<flat_map<Key, Value>> {
+    static const bool is_ordered = true;
+    static const bool is_multi = false;
     using key_set_type = flat_set<Key>;
     using key_multiset_type = flat_multiset<Key>;
     using value_set_type = flat_set<Value>;
@@ -26,6 +28,8 @@ namespace cj {
 
   template<typename Key, typename Value>
   struct map_traits<flat_multimap<Key, Value>> {
+    static const bool is_ordered = true;
+    static const bool is_multi = true;
     using key_set_type = flat_set<Key>;
     using key_multiset_type = flat_multiset<Key>;
     using value_set_type = flat_set<Value>;
@@ -34,6 +38,8 @@ namespace cj {
 
   template<typename Key, typename Value>
   struct map_traits<ordered_map<Key, Value>> {
+    static const bool is_ordered = true;
+    static const bool is_multi = false;
     using key_set_type = ordered_set<Key>;
     using key_multiset_type = ordered_multiset<Key>;
     using value_set_type = ordered_set<Value>;
@@ -42,6 +48,8 @@ namespace cj {
 
   template<typename Key, typename Value>
   struct map_traits<ordered_multimap<Key, Value>> {
+    static const bool is_ordered = true;
+    static const bool is_multi = true;
     using key_set_type = ordered_set<Key>;
     using key_multiset_type = ordered_multiset<Key>;
     using value_set_type = ordered_set<Value>;
@@ -50,6 +58,8 @@ namespace cj {
 
   template<typename Key, typename Value>
   struct map_traits<unordered_map<Key, Value>> {
+    static const bool is_ordered = false;
+    static const bool is_multi = false;
     using key_set_type = unordered_set<Key>;
     using key_multiset_type = unordered_multiset<Key>;
     using value_set_type = unordered_set<Value>;
@@ -58,6 +68,8 @@ namespace cj {
 
   template<typename Key, typename Value>
   struct map_traits<unordered_multimap<Key, Value>> {
+    static const bool is_ordered = false;
+    static const bool is_multi = true;
     using key_set_type = unordered_set<Key>;
     using key_multiset_type = unordered_multiset<Key>;
     using value_set_type = unordered_set<Value>;
@@ -65,56 +77,45 @@ namespace cj {
   };
 
   /**
-   * \brief True for ordered sets.
+   * \brief Traits for sets.
    */
-  template<typename T>
-  struct is_ordered_set {
-    static const bool value = false;
+  template<typename Container>
+  struct set_traits;
+
+  template<typename Key>
+  struct set_traits<flat_set<Key>> {
+    static const bool is_ordered = true;
+    static const bool is_multi = false;
   };
 
-  template<typename T>
-  struct is_ordered_set<flat_set<T>> {
-    static const bool value = true;
+  template<typename Key>
+  struct set_traits<flat_multiset<Key>> {
+    static const bool is_ordered = true;
+    static const bool is_multi = true;
   };
 
-  template<typename T>
-  struct is_ordered_set<flat_multiset<T>> {
-    static const bool value = true;
+  template<typename Key>
+  struct set_traits<ordered_set<Key>> {
+    static const bool is_ordered = true;
+    static const bool is_multi = false;
   };
 
-  template<typename T>
-  struct is_ordered_set<ordered_set<T>> {
-    static const bool value = true;
+  template<typename Key>
+  struct set_traits<ordered_multiset<Key>> {
+    static const bool is_ordered = true;
+    static const bool is_multi = true;
   };
 
-  template<typename T>
-  struct is_ordered_set<ordered_multiset<T>> {
-    static const bool value = true;
+  template<typename Key>
+  struct set_traits<unordered_set<Key>> {
+    static const bool is_ordered = false;
+    static const bool is_multi = false;
   };
 
-  template<typename T>
-  struct is_ordered_map {
-    static const bool value = false;
-  };
-
-  template<typename Key, typename T>
-  struct is_ordered_map<flat_map<Key, T>> {
-    static const bool value = true;
-  };
-
-  template<typename Key, typename T>
-  struct is_ordered_map<flat_multimap<Key, T>> {
-    static const bool value = true;
-  };
-
-  template<typename Key, typename T>
-  struct is_ordered_map<ordered_map<Key, T>> {
-    static const bool value = true;
-  };
-
-  template<typename Key, typename T>
-  struct is_ordered_map<ordered_multimap<Key, T>> {
-    static const bool value = true;
+  template<typename Key>
+  struct set_traits<unordered_multiset<Key>> {
+    static const bool is_ordered = false;
+    static const bool is_multi = true;
   };
 
   /**
@@ -122,7 +123,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<set_traits<Set>::is_ordered, int>::type = 0>
   auto set_union_size(Set const& xs, Set const& ys) -> size_t {
     if (xs.empty()) {
       return ys.size();
@@ -159,7 +160,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<!is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<!set_traits<Set>::is_ordered, int>::type = 0>
   auto set_union_size(Set const& xs, Set const& ys) -> size_t {
     if (xs.size() < ys.size()) {
       return set_union_size(ys, xs);
@@ -176,7 +177,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<set_traits<Set>::is_ordered, int>::type = 0>
   auto set_union(Set const& xs, Set const& ys) -> Set {
     if (xs.empty()) {
       return ys;
@@ -214,7 +215,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<!is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<!set_traits<Set>::is_ordered, int>::type = 0>
   auto set_union(Set const& xs, Set const& ys) -> Set {
     if (xs.size() < ys.size()) {
       return set_union(ys, xs);
@@ -229,7 +230,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<set_traits<Set>::is_ordered, int>::type = 0>
   auto set_intersection_size(Set const& xs, Set const& ys) -> size_t {
     if (xs.empty() || ys.empty()) {
       return 0;
@@ -254,7 +255,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<!is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<!set_traits<Set>::is_ordered, int>::type = 0>
   auto set_intersection_size(Set const& xs, Set const& ys) -> size_t {
     if (xs.empty() || ys.empty()) {
       return 0;
@@ -274,7 +275,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<set_traits<Set>::is_ordered, int>::type = 0>
   auto empty_set_intersection(Set const& xs, Set const& ys) -> bool {
     if (xs.empty() || ys.empty()) {
       return true;
@@ -300,7 +301,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<!is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<!set_traits<Set>::is_ordered, int>::type = 0>
   auto empty_set_intersection(Set const& xs, Set const& ys) -> bool {
     if (xs.size() < ys.size()) {
       return empty_set_intersection(ys, xs);
@@ -318,7 +319,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<set_traits<Set>::is_ordered, int>::type = 0>
   auto set_intersection(Set const& xs, Set const& ys) -> Set {
     auto inter = Set{};
     if (xs.empty() || ys.empty()) {
@@ -345,7 +346,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<!is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<!set_traits<Set>::is_ordered, int>::type = 0>
   auto set_intersection(Set const& xs, Set const& ys) -> Set {
     if (xs.size() < ys.size()) {
       return set_intersection(ys, xs);
@@ -367,7 +368,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<set_traits<Set>::is_ordered, int>::type = 0>
   auto set_difference_size(Set const& xs, Set const& ys) -> size_t {
     if (xs.empty()) {
       return 0;
@@ -400,7 +401,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<!is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<!set_traits<Set>::is_ordered, int>::type = 0>
   auto set_difference_size(Set const& xs, Set const& ys) -> size_t {
     auto count = xs.size();
     for (auto const& y : ys) {
@@ -414,7 +415,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<set_traits<Set>::is_ordered, int>::type = 0>
   auto set_difference(Set const& xs, Set const& ys) -> Set {
     auto diff = Set{};
     auto const xs_end = xs.end(), ys_end = ys.end();
@@ -443,7 +444,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<!is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<!set_traits<Set>::is_ordered, int>::type = 0>
   auto set_difference(Set const& xs, Set const& ys) -> Set {
     auto diff = xs;
     for (auto const& y : ys) {
@@ -497,7 +498,7 @@ namespace cj {
    */
   template<
     typename Set,
-    typename std::enable_if<is_ordered_set<Set>::value, int>::type = 0>
+    typename std::enable_if<set_traits<Set>::is_ordered, int>::type = 0>
   auto set_intersection_split_union(Set const& xs, Set const& ys, std::mt19937_64& rng) -> Set {
     auto unif = std::uniform_real_distribution<double>(0, 1);
     auto s = Set{};
@@ -539,7 +540,7 @@ namespace cj {
    */
   template<
     typename Map,
-    typename std::enable_if<is_ordered_map<Map>::value, int>::type = 0>
+    typename std::enable_if<map_traits<Map>::is_ordered, int>::type = 0>
   auto map_intersection_split_union(Map const& xs, Map const& ys, std::mt19937_64& rng) -> Map {
     auto unif = std::uniform_real_distribution<double>(0, 1);
     auto m = Map{};

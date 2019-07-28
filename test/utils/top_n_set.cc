@@ -82,3 +82,13 @@ TEST(CJTopNSet, TopNMaximum) {
   EXPECT_EQ("Vancouver", s.maximum());
   EXPECT_EQ(3, s.size());
 }
+
+TEST(CJTopNSet, PrintTopNSet) {
+  auto const s = cj::top_n_set<char, cj::flat_set>(3, {'a', 'c', 'e', 'd', 'z', 'x', 'a', 'x', 'z'});
+  EXPECT_EQ(cj::string{"{e, x, z}"}, boost::lexical_cast<cj::string>(s));
+}
+
+TEST(CJTopNSet, PrintTopNMultiSet) {
+  auto const s = cj::top_n_multiset<char>(4, {'a', 'c', 'e', 'd', 'z', 'x', 'a', 'b', 'z'});
+  EXPECT_EQ(cj::string{"{e, x, z, z}"}, boost::lexical_cast<cj::string>(s));
+}

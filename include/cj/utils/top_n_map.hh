@@ -185,7 +185,7 @@ namespace cj {
     if (m_values.size() < m_max_size) {
       m_values.insert(value_type(k, m));
       return true;
-    } else if (m_values.size() == m_max_size && m_values.begin()->first < k) {
+    } else if (m_values.begin()->first < k) {
       m_values.erase(m_values.begin());
       m_values.insert(value_type(k, m));
       return true;

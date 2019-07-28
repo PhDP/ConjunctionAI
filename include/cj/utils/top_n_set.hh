@@ -5,6 +5,8 @@
 #ifndef CJ_TOP_N_SET_HH_
 #define CJ_TOP_N_SET_HH_
 
+#define CJ_ENABLE_IF(...) typename std::enable_if<__VA_ARGS__::value>::type* = nullptr
+
 #include "cj/common.hh"
 #include "cj/math/set.hh"
 #include "cj/utils/string.hh"
@@ -26,9 +28,14 @@ namespace cj {
     using const_reverse_iterator = typename set_type::const_reverse_iterator;
 
     /**
-     * \brief Creates a bounded_multimap by setting its maximum number of elements.
+     * \brief Creates a top_n_set by setting its maximum number of elements.
      */
     top_n_set(size_t max_size) : m_max_size{max_size} {};
+
+    /**
+     * \brief Creates a top_n_set with a max_size and an initializer_list.
+     */
+    top_n_set(size_t max_size, std::initializer_list<key_type> const& keys);
 
     /**
      * \brief Whether the container is empty.
@@ -69,7 +76,31 @@ namespace cj {
      * \brief Inserts if the key is bigger than the minimum in the container (and if so, removes
      *        the previous minimum).
      */
-    auto try_insert(key_type const& k) -> bool;
+    template<typename std::enable_if<set_traits<set_type>::is_multi, int>::type = 0>
+    auto try_insert(key_type const& k) -> bool {
+      if (m_values.size() < m_max_size) {
+        m_values.insert(k);
+        return true;
+      } else if (*m_values.begin() < k) {
+        m_values.erase(m_values.begin());
+        m_values.insert(k);
+        return true;
+      }
+      return false;
+    }
+
+    template<typename std::enable_if<!set_traits<set_type>::is_multi, int>::type = 0>
+    auto try_insert(key_type const& k) -> bool {
+      if (m_values.size() < m_max_size) {
+        m_values.insert(k);
+        return true;
+      } else if (*m_values.begin() < k && m_values.find(k) == m_values.end()) {
+        m_values.erase(m_values.begin());
+        m_values.insert(k);
+        return true;
+      }
+      return false;
+    }
 
     /**
      * \brief Returns the number of elements matching specific key.
@@ -138,16 +169,11 @@ namespace cj {
   using top_n_multiset = top_n_set<Key, Multiset>;
 
   template<typename K, template<typename...> typename S>
-  auto top_n_set<K, S>::try_insert(key_type const& k) -> bool {
-    if (m_values.size() < m_max_size) {
-      m_values.insert(k);
-      return true;
-    } else if (m_values.size() == m_max_size && *m_values.begin() < k) {
-      m_values.erase(m_values.begin());
-      m_values.insert(k);
-      return true;
+  top_n_set<K, S>::top_n_set(size_t max_size, std::initializer_list<key_type> const& keys)
+    : m_max_size(max_size) {
+    for (auto const& key : keys) {
+      try_insert(key);
     }
-    return false;
   }
 
   template<typename K, template<typename...> typename S>
