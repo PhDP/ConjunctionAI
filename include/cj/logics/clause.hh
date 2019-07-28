@@ -4,7 +4,7 @@
 #ifndef CJ_CLAUSE_HH_
 #define CJ_CLAUSE_HH_
 
-#include "cj/details/common.hh"
+#include "cj/common.hh"
 #include "cj/utils/string.hh"
 
 namespace cj {
@@ -20,11 +20,12 @@ namespace cj {
    */
   template<
     typename A,
-    template<typename...> typename SetType = flat_set>
+    template<typename...> typename Set = flat_set>
   class clause {
    public:
+    using self_type = clause<A, Set>;
     using literal_type = A;
-    using literals_type = SetType<literal_type>;
+    using literals_type = Set<literal_type>;
     using iterator = typename literals_type::const_iterator;
     using const_iterator = typename literals_type::const_iterator;
 
@@ -39,7 +40,7 @@ namespace cj {
      * \brief Whether the clause is empty (has no literals).
      */
     auto empty() const noexcept -> bool {
-      return m_body.empty() && m_head.size();
+      return m_body.empty() && m_head.empty();
     }
 
     /**
@@ -49,65 +50,95 @@ namespace cj {
       return m_body.size() + m_head.size();
     }
 
-    auto count(literal_type const& a) const noexcept -> size_t {
-      return m_body.count(a) + m_head.count(a);
-    }
-
-    auto body_count(literal_type const& a) const noexcept -> size_t {
-      return m_body.count(a);
-    }
-
-    auto head_count(literal_type const& a) const noexcept -> size_t {
-      return m_head.count(a);
-    }
-
     /**
      * \brief Number of literals in the head.
      */
-    auto head_size() const noexcept -> size_t {
+    auto size_head() const noexcept -> size_t {
       return m_head.size();
     }
 
     /**
      * \brief Number of literals in the body.
      */
-    auto body_size() const noexcept -> size_t {
+    auto size_body() const noexcept -> size_t {
       return m_body.size();
+    }
+
+    /**
+     * \brief How many times the atom 'a' is found in the clause.
+     */
+    auto count(literal_type const& a) const noexcept -> size_t {
+      return m_body.count(a) + m_head.count(a);
+    }
+
+    /**
+     * \brief How many times the literal is found in the head of the clause.
+     */
+    auto count_head(literal_type const& a) const noexcept -> size_t {
+      return m_head.count(a);
+    }
+
+    /**
+     * \brief How many times the literal is found in the body of the clause.
+     */
+    auto count_body(literal_type const& a) const noexcept -> size_t {
+      return m_body.count(a);
+    }
+
+    /**
+     * \brief Whether the literal can be found in either body or head.
+     */
+    auto has(literal_type const& a) const noexcept -> bool {
+      return has_head(a) || has_body(a);
+    }
+
+    /**
+     * \brief Whether the literal can be found in the head of the clause.
+     */
+    auto has_head(literal_type const& a) const noexcept -> bool {
+      return m_head.find(a) != m_head.end();
+    }
+
+    /**
+     * \brief How many times the literal is found in the body of the clause.
+     */
+    auto has_body(literal_type const& a) const noexcept -> bool {
+      return m_body.find(a) != m_body.end();
     }
 
     /**
      * \brief A fact has one positive literal and no literals in the body.
      */
     auto is_fact() const noexcept -> bool {
-      return head_size() == 1 && body_size() == 0;
+      return size_head() == 1 && size_body() == 0;
     }
 
     /**
      * \brief A rule has one positive literal and at least one negative literal.
      */
     auto is_rule() const noexcept -> bool {
-      return head_size() == 1 && body_size > 0;
+      return size_head() == 1 && size_body() > 0;
     }
 
     /**
      * \brief A query has no positive literals and at least one negative literal.
      */
     auto is_query() const noexcept -> bool {
-      return head_size() == 0 && body_size > 0;
+      return size_head() == 0 && size_body() > 0;
     }
 
     /**
      * \brief A horn clause has 0 or 1 positive literal.
      */
     auto is_horn() const noexcept -> bool {
-      return head_size() < 2;
+      return size_head() < 2;
     }
 
     /**
      * \brief A definite clause has exactly one positive literal.
      */
     auto is_definite() const noexcept -> bool {
-      return head_size() == 1;
+      return size_head() == 1;
     }
 
     /**
@@ -125,100 +156,67 @@ namespace cj {
     }
 
     /**
-     * \brief Removes a positive literal.
+     * \brief Removes a positive literal. In the case of multisets: will only remove one literal.
      */
-    auto rmv_from_head(literal_type const& l) noexcept -> void {
-      m_head.erase(l);
-    }
+    auto rmv_from_head(literal_type const& l) noexcept -> void;
 
     /**
-     * \brief Removes a negative literal.
+     * \brief Removes a negative literal. In the case of multisets: will only remove one literal.
      */
-    auto rmv_from_body(literal_type const& l) noexcept -> void {
-      m_body.erase(l);
-    }
+    auto rmv_from_body(literal_type const& l) noexcept -> void;
 
     /**
-     * \brief Moves a literal from the head to the body.
+     * \brief Flips a literal from negative to positive or vice-verse. If the literal is found in
+     *        both the body and the head, or if it is found in neither: do nothing and return false.
      */
-    auto move_head_to_body(literal_type const& l) noexcept -> bool {
-      auto const it = m_head.find(l);
-      if (it == m_head.end()) {
-        return false;
-      }
-      m_head.erase(it);
-      m_body.insert(l);
-      return true;
-    }
+    auto flip(literal_type const& l) noexcept -> bool;
 
     /**
-     * \brief Moves a literal from the body to the head.
+     * \brief Checks if all elements of the head and body are the same.
      */
-    auto move_body_to_head(literal_type const& l) noexcept -> bool {
-      auto const it = m_body.find(l);
-      if (it == m_body.end()) {
-        return false;
-      }
-      m_body.erase(it);
-      m_head.insert(l);
-      return true;
-    }
-
-    /**
-     * \brief Flips a literal from negative to positive or vice-verse. If the
-     * literal is found in both the body and the head, or if it is found
-     * in neither: do nothing and return false.
-     */
-    auto flip(literal_type const& l) noexcept -> bool {
-      auto const it_body = m_body.find(l);
-      auto const it_head = m_head.find(l);
-      if ((it_body == m_body.end()) == (it_head == m_head.end())) {
-        return false;
-      }
-      if (it_body != m_body.end()) {
-        m_body.erase(it_body);
-        m_head.insert(l);
-      } else { // found_head is true
-        m_head.erase(it_head);
-        m_body.insert(l);
-      }
-      return true;
-    }
-
-    template<typename T_, template<typename...> class S_>
-    auto operator==(clause<T_, S_> const& other) const noexcept -> bool {
+    auto operator==(self_type const& other) const noexcept -> bool {
       return m_head == other.m_head && m_body == other.m_body;
     }
 
-    template<typename T_, template<typename...> class S_>
-    auto operator!=(clause<T_, S_> const& other) const noexcept -> bool {
+    /**
+     * \brief Checks if some elements of the head and body are different.
+     */
+    auto operator!=(self_type const& other) const noexcept -> bool {
       return m_head != other.m_head || m_body != other.m_body;
     }
 
-    template<typename T_, template<typename...> class S_>
-    auto operator<(clause<T_, S_> const& other) const noexcept -> bool {
-      if (m_head < other.m_head) {
-        return true;
-      }
-      if (other.m_head < m_head) {
-        return false;
-      }
-      return m_body < other.m_body;
+    /**
+     * \brief Applies < to the head and, if false and head == body, return the result of < on the body.
+     */
+    auto operator<(self_type const& other) const noexcept -> bool {
+      return m_head < other.m_head? true : (m_head == other.m_head) && (m_body < other.m_body);
     }
 
-    auto head_begin() const noexcept -> const_iterator {
+    /**
+     * \brief Iterator to the beginning of the head.
+     */
+    auto begin_head() const noexcept -> const_iterator {
       return m_head.begin();
     }
 
-    auto head_end() const noexcept -> const_iterator {
+    /**
+     * \brief Iterator to the end of the head.
+     */
+    auto end_head() const noexcept -> const_iterator {
       return m_head.end();
     }
 
-    auto body_begin() const noexcept -> const_iterator {
+    /**
+     * \brief Iterator to the beginning of the body.
+     */
+    auto begin_body() const noexcept -> const_iterator {
       return m_body.begin();
     }
 
-    auto body_end() const noexcept -> const_iterator {
+    /**
+     * \brief Iterator to the end of the body.
+     */
+    auto end_body() const noexcept -> const_iterator {
       return m_body.end();
     }
 
@@ -227,54 +225,94 @@ namespace cj {
     literals_type m_body;
   };
 
-  template<typename T, template<typename...> class S>
-  auto operator<<(std::ostream& os, clause<T, S> const& c) -> std::ostream& {
+  template<typename A, template<typename...> typename S>
+  auto clause<A, S>::rmv_from_head(literal_type const& l) noexcept -> void {
+    auto const it = m_head.find(l);
+    if (it != m_head.end()) {
+      m_head.erase(it);
+    }
+  }
+
+  template<typename A, template<typename...> typename S>
+  auto clause<A, S>::rmv_from_body(literal_type const& l) noexcept -> void {
+    auto const it = m_body.find(l);
+    if (it != m_body.end()) {
+      m_body.erase(it);
+    }
+  }
+
+  template<typename A, template<typename...> typename S>
+  auto clause<A, S>::flip(literal_type const& l) noexcept -> bool {
+    auto const it_body = m_body.find(l);
+    auto const it_head = m_head.find(l);
+    if ((it_body == m_body.end()) == (it_head == m_head.end())) {
+      return false;
+    }
+    if (it_body != m_body.end()) {
+      m_body.erase(it_body);
+      m_head.insert(l);
+    } else { // found_head is true
+      m_head.erase(it_head);
+      m_body.insert(l);
+    }
+    return true;
+  }
+
+  template<typename T, template<typename...> typename S>
+  auto show_clause(std::ostream& os, clause<T, S> const& c, string const& sym = " <- ") -> std::ostream& {
     os
-      << intersperse(c.head_begin(), c.head_end())
-      << " := "
-      << intersperse(c.body_begin(), c.body_end());
+      << intersperse(c.begin_head(), c.end_head())
+      << " <- "
+      << intersperse(c.begin_body(), c.end_body());
     return os;
   }
 
+  template<typename T, template<typename...> typename S>
+  auto operator<<(std::ostream& os, clause<T, S> const& c) -> std::ostream& {
+    return show_clause(os, c);
+  }
+
+  /**
+   */
   enum class clause_kind {
     dnf,
     cnf
   };
 
-  template<
-    typename T,
-    typename WeightType = double,
-    template<typename...> typename SetType = flat_set,
-    template<typename, typename...> typename MapType = flat_map>
-  class clausal_kb {
-   public:
-    using clause_type = clause<T, SetType>;
-    using weight_type = WeightType;
-    using kb_type = MapType<clause_type, weight_type>;
-    using const_iterator = typename kb_type::const_iterator;
-
-    clausal_kb() noexcept;
-
-    auto empty() const -> bool;
-
-    auto size() const -> size_t;
-
-    auto kind() const -> clause_kind { return m_kind; }
-
-    auto tell(formula const& f, weight_type weight = std::numeric_limits<double>::infinity()) -> void;
-
-    auto tell(clause_type const& f, weight_type weight = std::numeric_limits<double>::infinity()) -> void;
-
-    auto show(std::ostream& os, symbols_map const& s) const -> std::ostream&;
-
-    auto begin() const -> const_iterator;
-
-    auto end() const -> const_iterator;
-
-   private:
-    kb_type m_kb;
-    clause_kind m_kind;
-  };
+//  template<
+//    typename T,
+//    typename WeightType = double,
+//    template<typename...> typename SetType = flat_set,
+//    template<typename, typename...> typename MapType = flat_map>
+//  class clausal_kb {
+//   public:
+//    using clause_type = clause<T, SetType>;
+//    using weight_type = WeightType;
+//    using kb_type = MapType<clause_type, weight_type>;
+//    using const_iterator = typename kb_type::const_iterator;
+//
+//    clausal_kb() noexcept;
+//
+//    auto empty() const -> bool;
+//
+//    auto size() const -> size_t;
+//
+//    auto kind() const -> clause_kind { return m_kind; }
+//
+//    auto tell(formula const& f, weight_type weight = std::numeric_limits<double>::infinity()) -> void;
+//
+//    auto tell(clause_type const& f, weight_type weight = std::numeric_limits<double>::infinity()) -> void;
+//
+//    auto show(std::ostream& os, symbols_map const& s) const -> std::ostream&;
+//
+//    auto begin() const -> const_iterator;
+//
+//    auto end() const -> const_iterator;
+//
+//   private:
+//    kb_type m_kb;
+//    clause_kind m_kind;
+//  };
 
 } /* end namespace cj */
 

@@ -99,3 +99,24 @@ TEST(CJTopNMap, BoundedMultimapSetOfValues) {
   EXPECT_EQ((cj::ordered_set<uint64_t>{28, 6, 15}), m.set_of_values());
   EXPECT_EQ((cj::ordered_multiset<uint64_t>{28, 28, 6, 15}), m.multiset_of_values());
 }
+
+TEST(CJTopNMap, MapTopNMaximum) {
+  auto s = cj::top_n_map<int, double>(4, {{4, 0.1}, {2, 0.5}, {1, 0.6}, {8, 0.0}, {8, 1.5}, {8, 2.5}});
+  using pair = cj::top_n_map<int, double>::value_type;
+
+  EXPECT_EQ(pair(1, 0.6), s.minimum());
+  EXPECT_EQ(pair(8, 0.0), s.maximum());
+  EXPECT_EQ(4, s.size());
+}
+
+TEST(CJTopNMap, PrintTopNMap) {
+  auto const s = cj::top_n_map<char, int>(3, {{'a', 0}, {'c', 2}, {'e', 4}, {'d', 3}, {'z', 23},
+                    {'x', 21}, {'a', 0}, {'x', 21}, {'z', 23}});
+  EXPECT_EQ(cj::string{"{(e, 4), (x, 21), (z, 23)}"}, boost::lexical_cast<cj::string>(s));
+}
+
+TEST(CJTopNMap, PrintTopNMultiMap) {
+  auto const s = cj::top_n_multimap<char, int>(4, {{'a', 0}, {'c', 2}, {'e', 4}, {'d', 3},
+                    {'z', 23}, {'x', 21}, {'a', 0}, {'z', 23}});
+  EXPECT_EQ(cj::string{"{(e, 4), (x, 21), (z, 23), (z, 23)}"}, boost::lexical_cast<cj::string>(s));
+}

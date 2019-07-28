@@ -57,7 +57,7 @@ TEST(CJTopNSet, TopNSetGetMinimum) {
   EXPECT_EQ(2, s.size());
 }
 
-TEST(CJTopNSet, TopNMaximum) {
+TEST(CJTopNSet, TopNMultiMaximum) {
   auto s = cj::top_n_multiset<std::string>(3);
 
   s.try_insert("Kyoto");
@@ -81,6 +81,14 @@ TEST(CJTopNSet, TopNMaximum) {
   EXPECT_EQ("Paris", s.minimum());
   EXPECT_EQ("Vancouver", s.maximum());
   EXPECT_EQ(3, s.size());
+}
+
+TEST(CJTopNSet, TopNMaximum) {
+  auto s = cj::top_n_set<int>(4, {4, 2, 1, 8, 8, 8});
+
+  EXPECT_EQ(1, s.minimum());
+  EXPECT_EQ(8, s.maximum());
+  EXPECT_EQ(4, s.size());
 }
 
 TEST(CJTopNSet, PrintTopNSet) {

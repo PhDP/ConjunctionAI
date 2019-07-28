@@ -5,8 +5,6 @@
 #ifndef CJ_TOP_N_SET_HH_
 #define CJ_TOP_N_SET_HH_
 
-#define CJ_ENABLE_IF(...) typename std::enable_if<__VA_ARGS__::value>::type* = nullptr
-
 #include "cj/common.hh"
 #include "cj/math/set.hh"
 #include "cj/utils/string.hh"
@@ -77,30 +75,14 @@ namespace cj {
      *        the previous minimum).
      */
     template<typename K = Key>
-    auto try_insert(key_type const& k, typename std::enable_if<set_traits<Set<K>>::is_multi, int>::type* = 0) -> bool {
-      if (m_values.size() < m_max_size) {
-        m_values.insert(k);
-        return true;
-      } else if (*m_values.begin() < k) {
-        m_values.erase(m_values.begin());
-        m_values.insert(k);
-        return true;
-      }
-      return false;
-    }
+    auto try_insert(key_type const& k, typename std::enable_if<set_traits<Set<K>>::is_multi, int>::type* = 0) -> bool;
 
+    /**
+     * \brief Inserts if the key is bigger than the minimum in the container (and if so, removes
+     *        the previous minimum).
+     */
     template<typename K = Key>
-    auto try_insert(key_type const& k, typename std::enable_if<!set_traits<Set<K>>::is_multi, int>::type* = 0) -> bool {
-      if (m_values.size() < m_max_size) {
-        m_values.insert(k);
-        return true;
-      } else if (*m_values.begin() < k && m_values.find(k) == m_values.end()) {
-        m_values.erase(m_values.begin());
-        m_values.insert(k);
-        return true;
-      }
-      return false;
-    }
+    auto try_insert(key_type const& k, typename std::enable_if<!set_traits<Set<K>>::is_multi, int>::type* = 0) -> bool;
 
     /**
      * \brief Returns the number of elements matching specific key.
@@ -170,10 +152,36 @@ namespace cj {
 
   template<typename K, template<typename...> typename S>
   top_n_set<K, S>::top_n_set(size_t max_size, std::initializer_list<key_type> const& keys)
-    : m_max_size(max_size) {
+    : m_max_size{max_size} {
     for (auto const& key : keys) {
       try_insert(key);
     }
+  }
+
+  template<typename K, template<typename...> typename S> template<typename K0>
+  auto top_n_set<K, S>::try_insert(key_type const& k, typename std::enable_if<set_traits<S<K0>>::is_multi, int>::type*) -> bool {
+    if (m_values.size() < m_max_size) {
+      m_values.insert(k);
+      return true;
+    } else if (*m_values.begin() < k) {
+      m_values.erase(m_values.begin());
+      m_values.insert(k);
+      return true;
+    }
+    return false;
+  }
+
+  template<typename K, template<typename...> typename S> template<typename K0>
+  auto top_n_set<K, S>::try_insert(key_type const& k, typename std::enable_if<!set_traits<S<K0>>::is_multi, int>::type*) -> bool {
+    if (m_values.size() < m_max_size) {
+      m_values.insert(k);
+      return true;
+    } else if (*m_values.begin() < k && m_values.find(k) == m_values.end()) {
+      m_values.erase(m_values.begin());
+      m_values.insert(k);
+      return true;
+    }
+    return false;
   }
 
   template<typename K, template<typename...> typename S>

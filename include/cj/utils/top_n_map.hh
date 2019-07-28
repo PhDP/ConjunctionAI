@@ -39,6 +39,11 @@ namespace cj {
     top_n_map(size_t max_size) : m_max_size{max_size} {};
 
     /**
+     * \brief Creates a top_n_map with a maximum and a list of initial elements.
+     */
+    top_n_map(size_t max_size, std::initializer_list<value_type> const& values);
+
+    /**
      * \brief Whether the container is empty.
      */
     auto empty() const -> bool {
@@ -77,7 +82,17 @@ namespace cj {
      * \brief Inserts if the key is bigger than the minimum in the container (and if so, removes
      *        the previous minimum).
      */
-    auto try_insert(key_type const& k, mapped_type const& m) -> bool;
+    template<typename K = Key>
+    auto try_insert(key_type const& k, mapped_type const& m,
+                    typename std::enable_if<map_traits<Map<K, T>>::is_multi, int>::type* = 0) -> bool;
+
+    /**
+     * \brief Inserts if the key is bigger than the minimum in the container (and if so, removes
+     *        the previous minimum).
+     */
+    template<typename K = Key>
+    auto try_insert(key_type const& k, mapped_type const& m,
+                    typename std::enable_if<!map_traits<Map<K, T>>::is_multi, int>::type* = 0) -> bool;
 
     /**
      * \brief Returns the set of keys in the container.
@@ -181,16 +196,11 @@ namespace cj {
   using top_n_multimap = top_n_map<Key, T, Multimap>;
 
   template<typename K, typename T, template<typename, typename...> typename M>
-  auto top_n_map<K, T, M>::try_insert(key_type const& k, mapped_type const& m) -> bool {
-    if (m_values.size() < m_max_size) {
-      m_values.insert(value_type(k, m));
-      return true;
-    } else if (m_values.begin()->first < k) { // For multimap: m_values.find(k) == m_values.end()
-      m_values.erase(m_values.begin());
-      m_values.insert(value_type(k, m));
-      return true;
+  top_n_map<K, T, M>::top_n_map(size_t max_size, std::initializer_list<value_type> const& values)
+    : m_max_size{max_size} {
+    for (auto const& v : values) {
+      try_insert(v.first, v.second);
     }
-    return false;
   }
 
   template<typename K, typename T, template<typename, typename...> typename M>
@@ -227,6 +237,34 @@ namespace cj {
       s.insert(elem.second);
     }
     return s;
+  }
+
+  template<typename K, typename T, template<typename, typename...> typename M> template<typename K0>
+  auto top_n_map<K, T, M>::try_insert(key_type const& k, mapped_type const& m,
+                                      typename std::enable_if<map_traits<M<K0, T>>::is_multi, int>::type*) -> bool {
+    if (m_values.size() < m_max_size) {
+      m_values.insert(value_type(k, m));
+      return true;
+    } else if (m_values.begin()->first < k) {
+      m_values.erase(m_values.begin());
+      m_values.insert(value_type(k, m));
+      return true;
+    }
+    return false;
+  }
+
+  template<typename K, typename T, template<typename, typename...> typename M> template<typename K0>
+  auto top_n_map<K, T, M>::try_insert(key_type const& k, mapped_type const& m,
+                                      typename std::enable_if<!map_traits<M<K0, T>>::is_multi, int>::type*) -> bool {
+    if (m_values.size() < m_max_size) {
+      m_values.insert(value_type(k, m));
+      return true;
+    } else if (m_values.begin()->first < k && m_values.find(k) == m_values.end()) {
+      m_values.erase(m_values.begin());
+      m_values.insert(value_type(k, m));
+      return true;
+    }
+    return false;
   }
 
   template<typename K, typename T, template<typename, typename...> typename M>
