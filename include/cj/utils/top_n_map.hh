@@ -1,41 +1,42 @@
 /**
- * \brief A multimap that will accept a limited number of elements and remove its smallest
- *        element to make place for larger elements.
+ * \brief An ordered map/multimap that will accept a limited number of elements and remove its
+ *        smallest element to make place for larger elements.
  */
-#ifndef CJ_BOUNDED_MULTIMAP_HH_
-#define CJ_BOUNDED_MULTIMAP_HH_
+#ifndef CJ_TOP_N_MAP_HH_
+#define CJ_TOP_N_MAP_HH_
 
 #include "cj/common.hh"
 #include "cj/math/set.hh"
+#include "cj/utils/string.hh"
 
 namespace cj {
 
   /**
-   * \brief A multimap that accepts only a fixed number of elements. Will remove
+   * \brief A map that accepts only a fixed number of elements. Will remove
    *        the smallest (key, value) pair when largest keys are being inserted
    *        and the container is full.
    */
   template<
     typename Key,
     typename T,
-    template<typename, typename...> typename Multimap = ordered_multimap>
-  class bounded_multimap {
+    template<typename, typename...> typename Map = ordered_map>
+  class top_n_map {
    public:
     using key_type = Key;
     using mapped_type = T;
     using value_type = pair<const key_type, mapped_type>;
-    using multimap_type = Multimap<key_type, mapped_type>;
-    using key_set_type = typename map_traits<multimap_type>::key_set_type;
-    using key_multiset_type = typename map_traits<multimap_type>::key_multiset_type;
-    using value_set_type = typename map_traits<multimap_type>::value_set_type;
-    using value_multiset_type = typename map_traits<multimap_type>::value_multiset_type;
-    using const_iterator = typename multimap_type::const_iterator;
-    using const_reverse_iterator = typename multimap_type::const_reverse_iterator;
+    using map_type = Map<key_type, mapped_type>;
+    using key_set_type = typename map_traits<map_type>::key_set_type;
+    using key_multiset_type = typename map_traits<map_type>::key_multiset_type;
+    using value_set_type = typename map_traits<map_type>::value_set_type;
+    using value_multiset_type = typename map_traits<map_type>::value_multiset_type;
+    using const_iterator = typename map_type::const_iterator;
+    using const_reverse_iterator = typename map_type::const_reverse_iterator;
 
     /**
-     * \brief Creates a bounded_multimap by setting its maximum number of elements.
+     * \brief Creates a top_n_map by setting its maximum number of elements.
      */
-    bounded_multimap(size_t max_size) : m_max_size{max_size} {};
+    top_n_map(size_t max_size) : m_max_size{max_size} {};
 
     /**
      * \brief Whether the container is empty.
@@ -169,12 +170,18 @@ namespace cj {
     }
 
    private:
-    multimap_type m_values;
+    map_type m_values;
     size_t m_max_size;
   };
 
+  template<
+    typename Key,
+    typename T,
+    template<typename, typename...> typename Multimap = ordered_multimap>
+  using top_n_multimap = top_n_map<Key, T, Multimap>;
+
   template<typename K, typename T, template<typename, typename...> typename M>
-  auto bounded_multimap<K, T, M>::try_insert(key_type const& k, mapped_type const& m) -> bool {
+  auto top_n_map<K, T, M>::try_insert(key_type const& k, mapped_type const& m) -> bool {
     if (m_values.size() < m_max_size) {
       m_values.insert(value_type(k, m));
       return true;
@@ -187,7 +194,7 @@ namespace cj {
   }
 
   template<typename K, typename T, template<typename, typename...> typename M>
-  auto bounded_multimap<K, T, M>::set_of_keys() const -> key_set_type {
+  auto top_n_map<K, T, M>::set_of_keys() const -> key_set_type {
     auto s = key_set_type{};
     for (auto const& elem : m_values) {
       s.insert(elem.first);
@@ -196,7 +203,7 @@ namespace cj {
   }
 
   template<typename K, typename T, template<typename, typename...> typename M>
-  auto bounded_multimap<K, T, M>::multiset_of_keys() const -> key_multiset_type {
+  auto top_n_map<K, T, M>::multiset_of_keys() const -> key_multiset_type {
     auto s = key_multiset_type{};
     for (auto const& elem : m_values) {
       s.insert(elem.first);
@@ -205,7 +212,7 @@ namespace cj {
   }
 
   template<typename K, typename T, template<typename, typename...> typename M>
-  auto bounded_multimap<K, T, M>::set_of_values() const -> value_set_type {
+  auto top_n_map<K, T, M>::set_of_values() const -> value_set_type {
     auto s = value_set_type{};
     for (auto const& elem : m_values) {
       s.insert(elem.second);
@@ -214,12 +221,18 @@ namespace cj {
   }
 
   template<typename K, typename T, template<typename, typename...> typename M>
-  auto bounded_multimap<K, T, M>::multiset_of_values() const -> value_multiset_type {
+  auto top_n_map<K, T, M>::multiset_of_values() const -> value_multiset_type {
     auto s = value_multiset_type{};
     for (auto const& elem : m_values) {
       s.insert(elem.second);
     }
     return s;
+  }
+
+  template<typename K, typename T, template<typename, typename...> typename M>
+  auto operator<<(std::ostream& os, top_n_map<K, T, M> const& m) -> std::ostream& {
+    os << '{' << intersperse_pairs(m.begin(), m.end()) << '}';
+    return os;
   }
 
 } /* end namespace cj */

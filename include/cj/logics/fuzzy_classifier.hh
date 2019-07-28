@@ -12,7 +12,7 @@
 #include "cj/math/confusion.hh"
 #include "cj/math/statistics.hh"
 #include "cj/data/data_matrix.hh"
-#include "cj/utils/bounded_multimap.hh"
+#include "cj/utils/top_n_map.hh"
 #include "cj/math/set.hh"
 
 namespace cj {
@@ -395,7 +395,7 @@ namespace cj {
 
     // Creates the initial population of solutions:
     auto pop = vector<self_type>(pop_size, initial);
-    auto fitnesses = bounded_multimap<double, size_t>(elites); // Maps the highest fitness to the population's index in 'pop'.
+    auto fitnesses = top_n_multimap<double, size_t>(elites); // Maps the highest fitness to the population's index in 'pop'.
     fitnesses.try_insert(fit(initial, training), 0);
 
     for (auto t = size_t{0}; t < t_max; ++t) {

@@ -8,7 +8,8 @@ set(test_src run_all.cc
   math/truth_spec.cc
   math/confusion_spec.cc
   math/set_spec.cc
-  utils/bounded_multimap.cc
+  utils/top_n_map.cc
+  utils/top_n_set.cc
 )
 
 add_executable(test_cj ${test_src})

@@ -1,14 +1,14 @@
 #include "gtest/gtest.h"
-#include "cj/utils/bounded_multimap.hh"
+#include "cj/utils/top_n_map.hh"
 
-TEST(CJBoundedMultimap, CreatesBoundedMultimap) {
-  auto const m = cj::bounded_multimap<double, size_t>(42);
+TEST(CJTopNMap, CreatesBoundedMultimap) {
+  auto const m = cj::top_n_multimap<double, size_t>(42);
   EXPECT_TRUE(m.empty());
   EXPECT_FALSE(m.is_full());
 }
 
-TEST(CJBoundedMultimap, BoundedMultimapIsFull) {
-  auto m = cj::bounded_multimap<double, char>(4);
+TEST(CJTopNMap, BoundedMultimapIsFull) {
+  auto m = cj::top_n_multimap<double, char>(4);
   EXPECT_TRUE(m.empty());
   EXPECT_FALSE(m.is_full());
 
@@ -37,9 +37,9 @@ TEST(CJBoundedMultimap, BoundedMultimapIsFull) {
   EXPECT_EQ(4, m.size());
 }
 
-TEST(CJBoundedMultimap, BoundedMapGetMinimum) {
-  auto m = cj::bounded_multimap<double, char>(2);
-  using pair = cj::bounded_multimap<double, char>::value_type;
+TEST(CJTopNMap, BoundedMapGetMinimum) {
+  auto m = cj::top_n_multimap<double, char>(2);
+  using pair = cj::top_n_multimap<double, char>::value_type;
 
   m.try_insert(0.5, 'c');
   EXPECT_EQ(pair(0.5, 'c'), m.minimum());
@@ -62,9 +62,9 @@ TEST(CJBoundedMultimap, BoundedMapGetMinimum) {
   EXPECT_EQ(2, m.size());
 }
 
-TEST(CJBoundedMultimap, BoundedMapGetMaximum) {
-  auto m = cj::bounded_multimap<int, std::string>(3);
-  using pair = cj::bounded_multimap<int, std::string>::value_type;
+TEST(CJTopNMap, BoundedMapGetMaximum) {
+  auto m = cj::top_n_multimap<int, std::string>(3);
+  using pair = cj::top_n_multimap<int, std::string>::value_type;
 
   m.try_insert(10, "Kyoto");
   EXPECT_EQ(pair(10, "Kyoto"), m.maximum());
@@ -83,9 +83,9 @@ TEST(CJBoundedMultimap, BoundedMapGetMaximum) {
   EXPECT_EQ(3, m.size());
 }
 
-TEST(CJBoundedMultimap, BoundedMultimapSetOfValues) {
-  auto m = cj::bounded_multimap<double, uint64_t>(4);
-  using pair = cj::bounded_multimap<double, uint64_t>::value_type;
+TEST(CJTopNMap, BoundedMultimapSetOfValues) {
+  auto m = cj::top_n_multimap<double, uint64_t>(4);
+  using pair = cj::top_n_multimap<double, uint64_t>::value_type;
 
   m.try_insert(0.1, 19);
   m.try_insert(0.9, 28);
