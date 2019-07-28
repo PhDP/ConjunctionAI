@@ -76,8 +76,8 @@ namespace cj {
      * \brief Inserts if the key is bigger than the minimum in the container (and if so, removes
      *        the previous minimum).
      */
-    template<typename std::enable_if<set_traits<set_type>::is_multi, int>::type = 0>
-    auto try_insert(key_type const& k) -> bool {
+    template<typename K = Key>
+    auto try_insert(key_type const& k, typename std::enable_if<set_traits<Set<K>>::is_multi, int>::type* = 0) -> bool {
       if (m_values.size() < m_max_size) {
         m_values.insert(k);
         return true;
@@ -89,8 +89,8 @@ namespace cj {
       return false;
     }
 
-    template<typename std::enable_if<!set_traits<set_type>::is_multi, int>::type = 0>
-    auto try_insert(key_type const& k) -> bool {
+    template<typename K = Key>
+    auto try_insert(key_type const& k, typename std::enable_if<!set_traits<Set<K>>::is_multi, int>::type* = 0) -> bool {
       if (m_values.size() < m_max_size) {
         m_values.insert(k);
         return true;
