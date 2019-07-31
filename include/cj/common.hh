@@ -279,6 +279,14 @@ namespace cj {
     }
   }
 
+  template<typename It>
+  constexpr auto std_hash_pair_range(size_t& seed, It fst, It lst) noexcept -> void {
+    for (; fst != lst; ++fst) {
+      std_hash_range(seed, fst->first);
+      std_hash_range(seed, fst->second);
+    }
+  }
+
 } /* end namespace cj */
 
 #endif

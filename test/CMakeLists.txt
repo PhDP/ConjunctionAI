@@ -5,6 +5,7 @@ include_directories(./gtest/googletest/include)
 set(test_src run_all.cc
   logics/fuzzy_classifier_spec.cc
   logics/clause_spec.cc
+  logics/clausal_kb_spec.cc
   data/data_matrix_spec.cc
   math/truth_spec.cc
   math/confusion_spec.cc
