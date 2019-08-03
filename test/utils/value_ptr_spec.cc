@@ -29,8 +29,7 @@ TEST(CJValuePtr, ValuePtrInHashMap) {
   xs.insert(cj::value_ptr<int>{nullptr});
 
   EXPECT_EQ(3, xs.size());
-//  EXPECT_TRUE(cj::contains(xs, cj::value_ptr<int>{new int{6}}));
-//  EXPECT_TRUE(cj::contains(xs, cj::value_ptr<int>{nullptr}));
-//  EXPECT_FALSE(cj::contains(xs, cj::value_ptr<int>{new int{7}}));
+  EXPECT_TRUE(cj::contains(xs, cj::value_ptr<int>{new int{6}}));
+  EXPECT_TRUE(cj::contains(xs, cj::value_ptr<int>{nullptr}));
+  EXPECT_FALSE(cj::contains(xs, cj::value_ptr<int>{new int{7}}));
 }
-

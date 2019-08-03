@@ -26,21 +26,6 @@ namespace cj {
       : m_ptr{e} {
     }
 
-    // Copy constructor.
-    value_ptr(value_ptr<element_type> const&) = delete;
-
-    // Copy assignment operator.
-    auto operator=(value_ptr<element_type> const&) -> value_ptr<element_type>& = delete;
-
-    value_ptr(value_ptr<element_type>&& other);
-
-    auto operator=(value_ptr<element_type>&& other) -> value_ptr<element_type>&;
-
-    /**
-     * \brief Call 'delete' on the object.
-     */
-    ~value_ptr();
-
     /**
      * \brief True for non-null pointers.
      */
@@ -85,69 +70,22 @@ namespace cj {
     auto operator<(value_ptr<element_type> const& other) const -> bool;
 
    private:
-    element_type* m_ptr;
+    std::unique_ptr<element_type> m_ptr;
   };
 
   template<typename T>
-  value_ptr<T>::value_ptr(value_ptr<element_type>&& other) {
-    if (other.m_ptr) {
-      if (m_ptr) {
-        delete m_ptr;
-      }
-      m_ptr = other.m_ptr;
-      other.m_ptr = nullptr;
-    }
-  }
-
-  template<typename T>
-  auto value_ptr<T>::operator=(value_ptr<element_type>&& other) -> value_ptr<element_type>& {
-    if (this != &other) {
-      if (other.m_ptr) {
-        if (m_ptr) {
-          delete m_ptr;
-        }
-        m_ptr = other.m_ptr;
-        other.m_ptr = nullptr;
-      }
-    }
-    return *this;
-  }
-
-  template<typename T>
-  value_ptr<T>::~value_ptr() {
-    if (m_ptr) {
-      delete m_ptr;
-    }
-  }
-
-  template<typename T>
   auto value_ptr<T>::operator==(value_ptr<element_type> const& other) const -> bool {
-    if (m_ptr == nullptr) {
-      return other.m_ptr == nullptr;
-    } else if (other.m_ptr == nullptr) {
-      return false;
-    }
-    return *m_ptr == *other.m_ptr;
+    return bool(m_ptr) && bool(other.m_ptr)? *m_ptr == *other.m_ptr : !bool(m_ptr) && !bool(other.m_ptr);
   }
 
   template<typename T>
   auto value_ptr<T>::operator!=(value_ptr<element_type> const& other) const -> bool {
-    if (m_ptr == nullptr) {
-      return other.m_ptr != nullptr;
-    } else if (other.m_ptr == nullptr) {
-      return true;
-    }
-    return *m_ptr != *other.m_ptr;
+    return bool(m_ptr) && bool(other.m_ptr)? *m_ptr != *other.m_ptr : !bool(m_ptr) != !bool(other.m_ptr);
   }
 
   template<typename T>
   auto value_ptr<T>::operator<(value_ptr<element_type> const& other) const -> bool {
-    if (m_ptr == nullptr) {
-      return other.m_ptr != nullptr;
-    } else if (other.m_ptr == nullptr) {
-      return false;
-    }
-    return *m_ptr < *other.m_ptr;
+    return bool(m_ptr) && bool(other.m_ptr)? *m_ptr < *other.m_ptr : !bool(m_ptr) && bool(other.m_ptr);
   }
 
 } /* end namespace cj */
