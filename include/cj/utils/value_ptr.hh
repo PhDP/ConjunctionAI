@@ -75,17 +75,20 @@ namespace cj {
 
   template<typename T>
   auto value_ptr<T>::operator==(value_ptr<element_type> const& other) const -> bool {
-    return bool(m_ptr) && bool(other.m_ptr)? *m_ptr == *other.m_ptr : !bool(m_ptr) && !bool(other.m_ptr);
+    return bool(m_ptr) && bool(other.m_ptr)?
+      *m_ptr == *other.m_ptr : !bool(m_ptr) && !bool(other.m_ptr);
   }
 
   template<typename T>
   auto value_ptr<T>::operator!=(value_ptr<element_type> const& other) const -> bool {
-    return bool(m_ptr) && bool(other.m_ptr)? *m_ptr != *other.m_ptr : !bool(m_ptr) != !bool(other.m_ptr);
+    return bool(m_ptr) && bool(other.m_ptr)?
+      *m_ptr != *other.m_ptr : !bool(m_ptr) != !bool(other.m_ptr);
   }
 
   template<typename T>
   auto value_ptr<T>::operator<(value_ptr<element_type> const& other) const -> bool {
-    return bool(m_ptr) && bool(other.m_ptr)? *m_ptr < *other.m_ptr : !bool(m_ptr) && bool(other.m_ptr);
+    return bool(m_ptr) && bool(other.m_ptr)?
+      *m_ptr < *other.m_ptr : !bool(m_ptr) && bool(other.m_ptr);
   }
 
 } /* end namespace cj */
