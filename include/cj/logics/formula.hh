@@ -1,11 +1,9 @@
-/**
- *
- */
 #ifndef CJ_FORMULA_HH_
 #define CJ_FORMULA_HH_
 
 #include "cj/common.hh"
 #include "cj/utils/value_ptr.hh"
+#include "cj/logics/symbols.hh"
 
 namespace cj {
 
@@ -17,8 +15,6 @@ namespace cj {
 
   template<typename A>
   class quantifier;
-
-  using string = std::string;
 
   enum class unary_kind : uint32_t {
     negation,
@@ -51,11 +47,11 @@ namespace cj {
     unique
   };
 
-  auto precedence(unary_kind k) -> uint32_t {
+  constexpr auto precedence(unary_kind k) -> uint32_t {
     return 12;
   }
 
-  auto precedence(binary_kind k) -> uint32_t {
+  constexpr auto precedence(binary_kind k) -> uint32_t {
     switch (k) {
       case binary_kind::conjunction:
         return 9;
@@ -69,7 +65,7 @@ namespace cj {
         return 5;
       case binary_kind::equivalence:
         return 3;
-      case binary_kind::ex_disjunction:
+      default: // case binary_kind::ex_disjunction:
         return 1;
     }
   }
@@ -77,55 +73,16 @@ namespace cj {
   template<typename A>
   using formula = std::variant<
     A,
-    ptr<unary_conn<A>>,
-    ptr<binary_conn<A>>,
-    ptr<quantifier<A>>>;
-
-  class logic_symbols {
-   public:
-    template<typename K, typename V>
-    using map_type = boost::container::flat_map<K, V>;
-
-    logic_symbols(
-      map_type<unary_kind, string> const& u,
-      map_type<binary_kind, string> const& b,
-      map_type<quantifier_kind, string> const& q,
-      map_type<string, string> const& others) : m_u{u}, m_b{b}, m_q{q}, m_others(others) {}
-
-    auto operator()(unary_kind k) const -> string {
-      return m_u.at(k);
-    }
-
-    auto operator()(binary_kind k) const -> string {
-      return m_b.at(k);
-    }
-
-    auto operator()(quantifier_kind k) const -> string {
-      return m_q.at(k);
-    }
-
-    auto operator()(string const& s) const -> string {
-      return m_others.at(s);
-    }
-
-   private:
-    map_type<unary_kind, string> m_u;
-    map_type<binary_kind, string> m_b;
-    map_type<quantifier_kind, string> m_q;
-    map_type<string, string> m_others;
-  };
-
-  static const auto unicode = logic_symbols{
-    {{unary_kind::negation,"¬"}, {unary_kind::delta,"Δ"}},
-    {{binary_kind::conjunction,"⊗"}, {binary_kind::weak_conjunction,"∧"}, {binary_kind::disjunction,"⊕"}, {binary_kind::weak_disjunction,"∨"}, {binary_kind::implication,"⇒"}, {binary_kind::equivalence,"⇔"}, {binary_kind::ex_disjunction,"⊻"}},
-    {{quantifier_kind::universal,"∀"}, {quantifier_kind::existential,"∃"}, {quantifier_kind::unique,"∃!"}},
-    {}
-  };
+    value_ptr<unary_conn<A>>,
+    value_ptr<binary_conn<A>>,
+    value_ptr<quantifier<A>>>;
 
   template<typename A>
   class unary_conn {
    public:
-    unary_conn(formula<A> e, unary_kind k) : m_child{std::move(e)}, m_kind{k} {}
+    unary_conn(formula<A> e, unary_kind k)
+      : m_child{std::move(e)}, m_kind{k} {
+    }
 
     auto kind() const -> unary_kind {
       return m_kind;
@@ -143,36 +100,18 @@ namespace cj {
       return m_child;
     }
 
-    auto get() -> formula<A>* {
-      return &m_child;
+    auto operator==(unary_conn<A> const& other) const -> bool {
+      return m_kind == other.m_kind && m_child == other.m_child;
+    }
+
+    auto operator!=(unary_conn<A> const& other) const -> bool {
+      return m_kind != other.m_kind || m_child != other.m_child;
     }
 
    private:
     formula<A> m_child;
     unary_kind m_kind;
   };
-
-  template<typename T>
-  auto operator==(unary_conn<T> const& lhs, unary_conn<T> const& rhs) -> bool {
-    return lhs.kind() == rhs.kind() && lhs.child() == rhs.child();
-  }
-
-  template<typename T>
-  auto operator!=(unary_conn<T> const& lhs, unary_conn<T> const& rhs) -> bool {
-    return lhs.kind() != rhs.kind() || lhs.child() != rhs.child();
-  }
-
-  namespace std {
-    template<typename A>
-    struct hash<unary_conn<A>> {
-      auto operator()(unary_conn<A> const& u) const -> size_t {
-        auto seed = size_t{17606328859805673430LU};
-        std_hash_combine(seed, u.kind());
-        std_hash_combine(seed, u.child());
-        return seed;
-      }
-    };
-  }
 
   template<typename A>
   class binary_conn {
@@ -221,19 +160,6 @@ namespace cj {
     return lhs.kind() != rhs.kind() || lhs.lchild() != rhs.lchild() || lhs.rchild() != rhs.rchild();
   }
 
-  namespace std {
-    template<typename A>
-    struct hash<binary_conn<A>> {
-      auto operator()(binary_conn<A> const& b) const -> size_t {
-        auto seed = size_t{4043318905421095638LU};
-        std_hash_combine(seed, b.kind());
-        std_hash_combine(seed, b.lchild());
-        std_hash_combine(seed, b.rchild());
-        return seed;
-      }
-    };
-  }
-
   template<typename A>
   class quantifier {
    public:
@@ -274,19 +200,6 @@ namespace cj {
   template<typename A>
   auto operator!=(quantifier<A> const& lhs, quantifier<A> const& rhs) -> bool {
     return lhs.kind() != rhs.kind() || lhs.variable() != rhs.variable() || lhs.child() == rhs.child();
-  }
-
-  namespace std {
-    template<typename A>
-    struct hash<quantifier<A>> {
-      auto operator()(quantifier<A> const& q) const -> size_t {
-        auto seed = size_t{5391282501167644692LU};
-        std_hash_combine(seed, q.kind());
-        std_hash_combine(seed, q.variable());
-        std_hash_combine(seed, q.child());
-        return seed;
-      }
-    };
   }
 
   template<typename A>
@@ -459,21 +372,42 @@ namespace cj {
     return std::visit(double_neg_elim_vstr<A>{}, f);
   }
 
-  auto main() -> int {
-    using fm = formula<string>;
-    auto kb = std::unordered_set<fm> {};
-    auto x = !!!!!!!!!(!fm{string{"x"}} & !!!!fm{string{"y"}});
-    auto y = double_neg_elim(x);
-    auto z = double_neg_elim(x);
-    kb.insert(std::move(x));
-    kb.insert(std::move(y));
-    kb.insert(std::move(z));
-    for (auto const& f : kb) {
-      std::cout << f << '\n';
-    }
-    return 0;
-  }
-
 } /* end namespace cj */
+
+namespace std {
+
+  template<typename A>
+  struct hash<binary_conn<A>> {
+    auto operator()(binary_conn<A> const& b) const -> size_t {
+      auto seed = size_t{4043318905421095638LU};
+      std_hash_combine(seed, b.kind());
+      std_hash_combine(seed, b.lchild());
+      std_hash_combine(seed, b.rchild());
+      return seed;
+    }
+  };
+
+  template<typename A>
+  struct hash<quantifier<A>> {
+    auto operator()(quantifier<A> const& q) const -> size_t {
+      auto seed = size_t{5391282501167644692LU};
+      std_hash_combine(seed, q.kind());
+      std_hash_combine(seed, q.variable());
+      std_hash_combine(seed, q.child());
+      return seed;
+    }
+  };
+
+  template<typename A>
+  struct hash<unary_conn<A>> {
+    auto operator()(unary_conn<A> const& u) const -> size_t {
+      auto seed = size_t{17606328859805673430LU};
+      std_hash_combine(seed, u.kind());
+      std_hash_combine(seed, u.child());
+      return seed;
+    }
+  };
+
+} /* end namespace std */
 
 #endif
