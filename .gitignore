@@ -12,6 +12,7 @@ Release
 build*
 *.a
 *.o
+*.log
 
 # IDE files:
 *.swp
