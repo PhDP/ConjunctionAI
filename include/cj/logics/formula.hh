@@ -3,7 +3,6 @@
 
 #include "cj/common.hh"
 #include "cj/utils/value_ptr.hh"
-#include "cj/logics/symbols.hh"
 
 namespace cj {
 
@@ -69,6 +68,48 @@ namespace cj {
         return 1;
     }
   }
+
+  class symbols {
+   public:
+    symbols(
+      flat_map<unary_kind, string> const& u,
+      flat_map<binary_kind, string> const& b,
+      flat_map<quantifier_kind, string> const& q,
+      flat_map<string, string> const& others) : m_u{u}, m_b{b}, m_q{q}, m_others(others) {}
+
+    auto operator()(unary_kind k) const -> string {
+      return m_u.at(k);
+    }
+
+    auto operator()(binary_kind k) const -> string {
+      return m_b.at(k);
+    }
+
+    auto operator()(quantifier_kind k) const -> string {
+      return m_q.at(k);
+    }
+
+    auto operator()(string const& s) const -> string {
+      return m_others.at(s);
+    }
+
+   private:
+    flat_map<unary_kind, string> m_u;
+    flat_map<binary_kind, string> m_b;
+    flat_map<quantifier_kind, string> m_q;
+    flat_map<string, string> m_others;
+  };
+
+  static const auto unicode = symbols{
+    {{unary_kind::negation,"¬"}, {unary_kind::delta,"Δ"}},
+    {{binary_kind::conjunction,"⊗"}, {binary_kind::weak_conjunction,"∧"},
+      {binary_kind::disjunction,"⊕"}, {binary_kind::weak_disjunction,"∨"},
+      {binary_kind::implication,"⇒"}, {binary_kind::equivalence,"⇔"},
+      {binary_kind::ex_disjunction,"⊻"}},
+    {{quantifier_kind::universal,"∀"}, {quantifier_kind::existential,"∃"},
+      {quantifier_kind::unique,"∃!"}},
+    {}
+  };
 
   template<typename A>
   using formula = std::variant<
@@ -204,32 +245,32 @@ namespace cj {
 
   template<typename A>
   inline auto operator!(formula<A>&& f) -> formula<A> {
-    return ptr<unary_conn<A>>{new unary_conn<A>{std::move(f), unary_kind::negation}};
+    return value_ptr<unary_conn<A>>{new unary_conn<A>{std::move(f), unary_kind::negation}};
   }
 
   template<typename A>
   inline auto operator&&(formula<A>&& lhs, formula<A>&& rhs) -> formula<A> {
-    return ptr<binary_conn<A>>{new binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::conjunction}};
+    return value_ptr<binary_conn<A>>{new binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::conjunction}};
   }
 
   template<typename A>
   inline auto operator&(formula<A>&& lhs, formula<A>&& rhs) -> formula<A> {
-    return ptr<binary_conn<A>>{new binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::weak_conjunction}};
+    return value_ptr<binary_conn<A>>{new binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::weak_conjunction}};
   }
 
   template<typename A>
   inline auto operator||(formula<A>&& lhs, formula<A>&& rhs) -> formula<A> {
-    return ptr<binary_conn<A>>{new binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::disjunction}};
+    return value_ptr<binary_conn<A>>{new binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::disjunction}};
   }
 
   template<typename A>
   inline auto operator|(formula<A>&& lhs, formula<A>&& rhs) -> formula<A> {
-    return ptr<binary_conn<A>>{binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::weak_disjunction}};
+    return value_ptr<binary_conn<A>>{binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::weak_disjunction}};
   }
 
   template<typename A>
   inline auto operator^(formula<A>&& lhs, formula<A>&& rhs) -> formula<A> {
-    return ptr<binary_conn<A>>{binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::ex_disjunction}};
+    return value_ptr<binary_conn<A>>{binary_conn<A>{std::move(lhs), std::move(rhs), binary_kind::ex_disjunction}};
   }
 
   template<typename A>
@@ -238,22 +279,22 @@ namespace cj {
       return formula<A>{a};
     }
 
-    auto operator()(ptr<unary_conn<A>> const& u) -> formula<A> {
-      return ptr<unary_conn<A>>(new unary_conn<A>{
+    auto operator()(value_ptr<unary_conn<A>> const& u) -> formula<A> {
+      return value_ptr<unary_conn<A>>(new unary_conn<A>{
         std::move(std::visit(deep_cpy_vstr<A>{}, u->child())), u->kind()
       });
     }
 
-    auto operator()(ptr<binary_conn<A>> const& c) -> formula<A> {
-      return ptr<binary_conn<A>>(new binary_conn<A>{
+    auto operator()(value_ptr<binary_conn<A>> const& c) -> formula<A> {
+      return value_ptr<binary_conn<A>>(new binary_conn<A>{
         std::move(std::visit(deep_cpy_vstr<A>{}, c->lchild())),
         std::move(std::visit(deep_cpy_vstr<A>{}, c->rchild())),
         c->kind()
       });
     }
 
-    auto operator()(ptr<quantifier<A>> const& q) -> formula<A> {
-      return ptr<quantifier<A>>(new quantifier<A>{
+    auto operator()(value_ptr<quantifier<A>> const& q) -> formula<A> {
+      return value_ptr<quantifier<A>>(new quantifier<A>{
         q->variable(),
         std::move(std::visit(deep_cpy_vstr<A>{}, q->child())),
         q->kind()
@@ -264,20 +305,20 @@ namespace cj {
   template<typename A>
   struct show_vstr {
     std::ostream& m_os;
-    logic_symbols const& m_sym;
+    symbols const& m_sym;
 
-    show_vstr(std::ostream& os, logic_symbols const& sym = unicode) : m_os(os), m_sym(sym) { }
+    show_vstr(std::ostream& os, symbols const& sym = unicode) : m_os(os), m_sym(sym) { }
 
     auto operator()(A const& a) -> void {
       m_os << a;
     }
 
-    auto operator()(ptr<unary_conn<A>> const& u) -> void {
+    auto operator()(value_ptr<unary_conn<A>> const& u) -> void {
       m_os << m_sym(u->kind());
       std::visit(show_vstr<A>{m_os, m_sym}, u->child());
     }
 
-    auto operator()(ptr<binary_conn<A>> const& c) -> void {
+    auto operator()(value_ptr<binary_conn<A>> const& c) -> void {
       m_os << '(';
       std::visit(show_vstr<A>{m_os, m_sym}, c->lchild());
       m_os << ' ' << m_sym(c->kind()) << ' ';
@@ -285,7 +326,7 @@ namespace cj {
       m_os << ')';
     }
 
-    auto operator()(ptr<quantifier<A>> const& q) -> void {
+    auto operator()(value_ptr<quantifier<A>> const& q) -> void {
       m_os << m_sym(q->kind()) << ' ' << q->variable() << ": ";
       std::visit(show_vstr<A>{m_os, m_sym}, q->child());
     }
@@ -299,27 +340,27 @@ namespace cj {
       return formula<A>{a};
     }
 
-    auto operator()(ptr<unary_conn<A>> const& u) -> formula<A> {
+    auto operator()(value_ptr<unary_conn<A>> const& u) -> formula<A> {
       if (u->kind() == unary_kind::negation) {
         return std::visit(inner_vstr{}, u->child());
       } else {
-        return ptr<unary_conn<A>>{new unary_conn<A>{
+        return value_ptr<unary_conn<A>>{new unary_conn<A>{
           std::move(std::visit(double_neg_elim_vstr<A>{}, u->child())),
           unary_kind::delta
         }};
       }
     }
 
-    auto operator()(ptr<binary_conn<A>> const& b) -> formula<A> {
-      return ptr<binary_conn<A>>{new binary_conn<A>{
+    auto operator()(value_ptr<binary_conn<A>> const& b) -> formula<A> {
+      return value_ptr<binary_conn<A>>{new binary_conn<A>{
         std::move(std::visit(double_neg_elim_vstr<A>{}, b->lchild())),
         std::move(std::visit(double_neg_elim_vstr<A>{}, b->rchild())),
         b->kind()
       }};
     }
 
-    auto operator()(ptr<quantifier<A>> const& q) -> formula<A> {
-      return ptr<quantifier<A>>{new quantifier<A>{
+    auto operator()(value_ptr<quantifier<A>> const& q) -> formula<A> {
+      return value_ptr<quantifier<A>>{new quantifier<A>{
         q->variable(),
         std::move(std::visit(double_neg_elim_vstr<A>{}, q->child())),
         q->kind()
@@ -331,27 +372,27 @@ namespace cj {
         return !formula<A>{a};
       }
 
-      auto operator()(ptr<unary_conn<A>> const& u) -> formula<A> {
+      auto operator()(value_ptr<unary_conn<A>> const& u) -> formula<A> {
         if (u->kind() == unary_kind::negation) {
           return std::visit(double_neg_elim_vstr<A>{}, u->child());
         } else {
-          return !formula<A>{ptr<unary_conn<A>>{new unary_conn<A>{
+          return !formula<A>{value_ptr<unary_conn<A>>{new unary_conn<A>{
             std::move(std::visit(double_neg_elim_vstr<A>{}, u->child())),
             unary_kind::delta
           }}};
         }
       }
 
-      auto operator()(ptr<binary_conn<A>> const& b) -> formula<A> {
-        return !formula<A>{ptr<binary_conn<A>>{new binary_conn<A>{
+      auto operator()(value_ptr<binary_conn<A>> const& b) -> formula<A> {
+        return !formula<A>{value_ptr<binary_conn<A>>{new binary_conn<A>{
           std::move(std::visit(double_neg_elim_vstr<A>{}, b->lchild())),
           std::move(std::visit(double_neg_elim_vstr<A>{}, b->rchild())),
           b->kind()
         }}};
       }
 
-      auto operator()(ptr<quantifier<A>> const& q) -> formula<A> {
-        return !formula<A>{ptr<quantifier<A>>{new quantifier<A>{
+      auto operator()(value_ptr<quantifier<A>> const& q) -> formula<A> {
+        return !formula<A>{value_ptr<quantifier<A>>{new quantifier<A>{
           q->variable(),
           std::move(std::visit(double_neg_elim_vstr<A>{}, q->child())),
           q->kind()
@@ -377,33 +418,33 @@ namespace cj {
 namespace std {
 
   template<typename A>
-  struct hash<binary_conn<A>> {
-    auto operator()(binary_conn<A> const& b) const -> size_t {
+  struct hash<cj::binary_conn<A>> {
+    auto operator()(cj::binary_conn<A> const& b) const -> size_t {
       auto seed = size_t{4043318905421095638LU};
-      std_hash_combine(seed, b.kind());
-      std_hash_combine(seed, b.lchild());
-      std_hash_combine(seed, b.rchild());
+      cj::std_hash_combine(seed, b.kind());
+      cj::std_hash_combine(seed, b.lchild());
+      cj::std_hash_combine(seed, b.rchild());
       return seed;
     }
   };
 
   template<typename A>
-  struct hash<quantifier<A>> {
-    auto operator()(quantifier<A> const& q) const -> size_t {
+  struct hash<cj::quantifier<A>> {
+    auto operator()(cj::quantifier<A> const& q) const -> size_t {
       auto seed = size_t{5391282501167644692LU};
-      std_hash_combine(seed, q.kind());
-      std_hash_combine(seed, q.variable());
-      std_hash_combine(seed, q.child());
+      cj::std_hash_combine(seed, q.kind());
+      cj::std_hash_combine(seed, q.variable());
+      cj::std_hash_combine(seed, q.child());
       return seed;
     }
   };
 
   template<typename A>
-  struct hash<unary_conn<A>> {
-    auto operator()(unary_conn<A> const& u) const -> size_t {
+  struct hash<cj::unary_conn<A>> {
+    auto operator()(cj::unary_conn<A> const& u) const -> size_t {
       auto seed = size_t{17606328859805673430LU};
-      std_hash_combine(seed, u.kind());
-      std_hash_combine(seed, u.child());
+      cj::std_hash_combine(seed, u.kind());
+      cj::std_hash_combine(seed, u.child());
       return seed;
     }
   };

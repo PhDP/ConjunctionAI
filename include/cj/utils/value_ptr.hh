@@ -44,7 +44,7 @@ namespace cj {
      * \brief Returns a pointer to the object owned by the object.
      */
     auto operator->() const -> element_type const* {
-      return m_ptr;
+      return m_ptr.operator->();
     }
 
     /**
