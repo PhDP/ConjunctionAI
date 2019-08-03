@@ -1,6 +1,6 @@
 /**
  * \file   value_ptr.hh
- * \brief  A unique_ptr implementation with value semantics.
+ * \brief  A simple unique_ptr implementation with value semantics.
  */
 #ifndef CJ_VALUE_PTR_HH_
 #define CJ_VALUE_PTR_HH_
@@ -10,17 +10,21 @@
 namespace cj {
 
   /**
-   * \brief
-   *
-   * It is not intended as a complicated implementation that covers all use-cases (i.e. it doesn't
-   * handle arrays).
+   * \brief A value pointer with value semantics (==, !=, <, and std::hash will use the data owned
+   *        by the pointer, not the pointer itself). It is not intended as a complicated
+   *        implementation that covers all use-cases (i.e. it does not handle arrays).
    */
   template<typename T>
   class value_ptr {
    public:
-    using element_type = T:
+    using element_type = T;
 
-    explicit value_ptr(element_type* e) noexcept : m_ptr{e} { }
+    /**
+     * \brief Builds from a pointer. The newly formed object will now owned the data.
+     */
+    explicit value_ptr(element_type* e) noexcept
+      : m_ptr{e} {
+    }
 
     // Copy constructor.
     value_ptr(value_ptr<element_type> const&) = delete;
@@ -28,75 +32,132 @@ namespace cj {
     // Copy assignment operator.
     auto operator=(value_ptr<element_type> const&) -> value_ptr<element_type>& = delete;
 
-    value_ptr(value_ptr<element_type>&& other) {
+    value_ptr(value_ptr<element_type>&& other);
+
+    auto operator=(value_ptr<element_type>&& other) -> value_ptr<element_type>&;
+
+    /**
+     * \brief Call 'delete' on the object.
+     */
+    ~value_ptr();
+
+    /**
+     * \brief True for non-null pointers.
+     */
+    operator bool() const {
+      return m_ptr != nullptr;
+    }
+
+    /**
+     * \brief Returns the object.
+     */
+    auto operator*() const -> element_type const& {
+      return *m_ptr;
+    }
+
+    /**
+     * \brief Returns a pointer to the object owned by the object.
+     */
+    auto operator->() const -> element_type const* {
+      return m_ptr;
+    }
+
+    /**
+     * \brief Returns a copy of the pointer.
+     */
+    auto get() const -> element_type const* {
+      return m_ptr;
+    }
+
+    /**
+     * \brief Whether the values at the end of two non-null value_ptr are the same.
+     */
+    auto operator==(value_ptr<element_type> const& other) const -> bool;
+
+    /**
+     * \brief Whether the values at the end of two non-null value_ptr are different.
+     */
+    auto operator!=(value_ptr<element_type> const& other) const -> bool;
+
+    /**
+     * \brief Whether the values at the end of this non-null value_ptr is smaller than another.
+     */
+    auto operator<(value_ptr<element_type> const& other) const -> bool;
+
+   private:
+    element_type* m_ptr;
+  };
+
+  template<typename T>
+  value_ptr<T>::value_ptr(value_ptr<element_type>&& other) {
+    if (other.m_ptr) {
+      if (m_ptr) {
+        delete m_ptr;
+      }
+      m_ptr = other.m_ptr;
+      other.m_ptr = nullptr;
+    }
+  }
+
+  template<typename T>
+  auto value_ptr<T>::operator=(value_ptr<element_type>&& other) -> value_ptr<element_type>& {
+    if (this != &other) {
       if (other.m_ptr) {
         if (m_ptr) {
           delete m_ptr;
         }
         m_ptr = other.m_ptr;
-        other.m_ptr = std::nullptr;
+        other.m_ptr = nullptr;
       }
     }
+    return *this;
+  }
 
-    auto operator=(value_ptr<element_type>&& other) -> value_ptr<element_type>& {
-      if (this != &other) {
-        if (other.m_ptr) {
-          if (m_ptr) {
-            delete m_ptr;
-          }
-          m_ptr = other.m_ptr;
-          other.m_ptr = std::nullptr;
-        }
-      }
-      return *this;
+  template<typename T>
+  value_ptr<T>::~value_ptr() {
+    if (m_ptr) {
+      delete m_ptr;
     }
+  }
 
-    ~value_ptr() {
-      if (m_ptr) {
-        delete m_ptr;
-      }
+  template<typename T>
+  auto value_ptr<T>::operator==(value_ptr<element_type> const& other) const -> bool {
+    if (m_ptr == nullptr) {
+      return other.m_ptr == nullptr;
+    } else if (other.m_ptr == nullptr) {
+      return false;
     }
+    return *m_ptr == *other.m_ptr;
+  }
 
-    operator bool() {
-      return m_ptr != std::nullptr;
+  template<typename T>
+  auto value_ptr<T>::operator!=(value_ptr<element_type> const& other) const -> bool {
+    if (m_ptr == nullptr) {
+      return other.m_ptr != nullptr;
+    } else if (other.m_ptr == nullptr) {
+      return true;
     }
+    return *m_ptr != *other.m_ptr;
+  }
 
-    auto operator*() const -> element_type const& {
-      return *m_ptr;
+  template<typename T>
+  auto value_ptr<T>::operator<(value_ptr<element_type> const& other) const -> bool {
+    if (m_ptr == nullptr) {
+      return other.m_ptr != nullptr;
+    } else if (other.m_ptr == nullptr) {
+      return false;
     }
-
-    auto operator->() const -> element_type const* {
-      return m_ptr;
-    }
-
-    auto get() const -> eleemnt_type const* {
-      return m_ptr;
-    }
-
-    auto operator==(value_ptr<element_type> const& other) const -> bool {
-      return *m_ptr == *other.m_ptr;
-    }
-
-    auto operator!=(value_ptr<element_type> const& other) const -> bool {
-      return *m_ptr != *other.m_ptr;
-    }
-
-    auto operator<(value_ptr<element_type> const& other) const -> bool {
-      return *m_ptr < *other.m_ptr;
-    }
-
-   private:
-    element_type* m_ptr;
-  };
+    return *m_ptr < *other.m_ptr;
+  }
 
 } /* end namespace cj */
 
 namespace std {
 
   template<typename T>
-  class hash<T> {
-    auto operator()(cj::value_ptr<T> const& ptr) cons -> size_t {
-      return ptr? std::hash<T>{}(*ptr) : 0;
+  struct hash<cj::value_ptr<T>> {
+    auto operator()(cj::value_ptr<T> const& p) const -> size_t {
+      return bool(p)? hash<T>{}(*p) : 0;
     }
   };
 

@@ -16,7 +16,7 @@ namespace cj {
    * For example, given "-foo=42 --bar baz=0.6", this function will return:
    *
    *   std::optional<uint32_t>{42} for get_arg<uint32_t>(argc, argv, "foo")
-   *   boost:none for get_arg<int>(argc, argv, "baaz")
+   *   std::nullopt for get_arg<int>(argc, argv, "baaz")
    *   std::optional<double>{0.6} for get_arg<double>(argc, argv, "baz")
    *   std::optional<string>{""} for get_arg<string>(argc, argv, "bar")
    *

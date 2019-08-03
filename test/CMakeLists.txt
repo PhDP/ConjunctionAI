@@ -12,6 +12,7 @@ set(test_src run_all.cc
   math/set_spec.cc
   utils/top_n_map_spec.cc
   utils/top_n_set_spec.cc
+  utils/value_ptr_spec.cc
 )
 
 add_executable(test_cj ${test_src})

@@ -1,6 +1,7 @@
 /**
  * \brief An ordered map/multimap that will accept a limited number of elements and remove its
- *        smallest element to make place for larger elements.
+ *        smallest element to make place for larger elements. Use case: keep track of the fittest
+ *        populations in an evolutionary algorithms with a top_n_map<fitness, population_id>.
  */
 #ifndef CJ_TOP_N_MAP_HH_
 #define CJ_TOP_N_MAP_HH_
@@ -84,7 +85,8 @@ namespace cj {
      */
     template<typename K = Key>
     auto try_insert(key_type const& k, mapped_type const& m,
-                    typename std::enable_if<map_traits<Map<K, T>>::is_multi, int>::type* = 0) -> bool;
+                    typename std::enable_if<map_traits<Map<K, T>>::is_multi, int>::type* = 0)
+                    -> bool;
 
     /**
      * \brief Inserts if the key is bigger than the minimum in the container (and if so, removes
@@ -92,7 +94,8 @@ namespace cj {
      */
     template<typename K = Key>
     auto try_insert(key_type const& k, mapped_type const& m,
-                    typename std::enable_if<!map_traits<Map<K, T>>::is_multi, int>::type* = 0) -> bool;
+                    typename std::enable_if<!map_traits<Map<K, T>>::is_multi, int>::type* = 0)
+                    -> bool;
 
     /**
      * \brief Returns the set of keys in the container.
@@ -241,7 +244,8 @@ namespace cj {
 
   template<typename K, typename T, template<typename, typename...> typename M> template<typename K0>
   auto top_n_map<K, T, M>::try_insert(key_type const& k, mapped_type const& m,
-                                      typename std::enable_if<map_traits<M<K0, T>>::is_multi, int>::type*) -> bool {
+                                      typename std::enable_if<map_traits<M<K0, T>>::is_multi, int>::type*)
+                                      -> bool {
     if (m_values.size() < m_max_size) {
       m_values.insert(value_type(k, m));
       return true;
@@ -255,7 +259,8 @@ namespace cj {
 
   template<typename K, typename T, template<typename, typename...> typename M> template<typename K0>
   auto top_n_map<K, T, M>::try_insert(key_type const& k, mapped_type const& m,
-                                      typename std::enable_if<!map_traits<M<K0, T>>::is_multi, int>::type*) -> bool {
+                                      typename std::enable_if<!map_traits<M<K0, T>>::is_multi, int>::type*)
+                                      -> bool {
     if (m_values.size() < m_max_size) {
       m_values.insert(value_type(k, m));
       return true;
