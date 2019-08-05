@@ -200,12 +200,12 @@ namespace cj {
      * \param pop_size    ...
      * \param elites      ...
      * \param seed        Seed for the random number generator.
-     * \return            Multimap from fitness to knowledge base.
+     * \return            Best classifier
      */
     static auto evolve(self_type initial, mutate_function const& mut, fitness_function const& fit,
       std::function<bool(double)> const& stop,
       data_matrix<input_type, id_type> const& training, size_t const pop_size = 1000,
-      size_t const elites = 50, size_t const t_max = 1000, size_t const seed = 42) -> pair<self_type, double>;
+      size_t const elites = 50, size_t const t_max = 1000, size_t const seed = 42) -> self_type;
 
    private:
     rules_type m_rules;
@@ -381,13 +381,13 @@ namespace cj {
   auto fuzzy_classifier<Truth, Input, Id>::evolve(self_type initial, mutate_function const& mut,
       fitness_function const& fit, std::function<bool(double)> const& stop,
       data_matrix<input_type, id_type> const& training, size_t const pop_size, size_t const elites,
-      size_t const t_max, size_t const seed) -> pair<self_type, double> {
+      size_t const t_max, size_t const seed) -> self_type {
     assert(pop_size > 0);
     assert(elites > 0);
     assert(elites < pop_size);
     assert(t_max > 0);
 
-    auto mutations = std::binomial_distribution<int>(100, 0.03);
+    auto mutations = std::binomial_distribution<int>(100, 0.001);
     auto const inter = initial.get_interpretation_ptr();
 
     auto const non_elites = pop_size - elites;
@@ -398,7 +398,8 @@ namespace cj {
     auto fitnesses = top_n_multimap<double, size_t>(elites); // Maps the highest fitness to the population's index in 'pop'.
     fitnesses.try_insert(fit(initial, training), 0);
 
-    for (auto t = size_t{0}; t < t_max; ++t) {
+    auto t = size_t{0};
+    while (true) {
       // Mutates and store fitness:
       for (auto p = size_t{0}; p < pop_size; ++p) {
         auto const num_mutations = mutations(rng);
@@ -407,7 +408,7 @@ namespace cj {
         }
         fitnesses.try_insert(fit(pop[p], training), p);
       }
-      if (stop(fitnesses.maximum_key())) {
+      if (stop(fitnesses.maximum_key()) || t++ == t_max) {
         break;
       }
       auto const fittest = fitnesses.set_of_values();
@@ -422,7 +423,7 @@ namespace cj {
         }
       }
     }
-    return {pop[fitnesses.maximum().second], fitnesses.maximum_key()};
+    return pop[fitnesses.maximum().second];
   }
 
   template<typename Truth, typename Input, typename Id>

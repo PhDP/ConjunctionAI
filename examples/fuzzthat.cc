@@ -23,15 +23,17 @@ auto make_interpretation(size_t nsets, cj::data_matrix<double, uint32_t> const& 
 
 template<typename Truth>
 auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alpha, cj::data_matrix<double, uint32_t> const& dm)
-          -> cj::pair<cj::fuzzy_classifier<Truth, double, uint32_t>, double> {
+          -> cj::fuzzy_classifier<Truth, double, uint32_t> {
   using classifier = cj::fuzzy_classifier<Truth, double, uint32_t>;
   using rule_type = typename classifier::rule_type;
 
   auto rng = std::mt19937_64(seed);
   auto i = make_interpretation<Truth>(nsets, dm);
-  auto const initial_rule = classifier(i, {{{{0, 0}}, 0}, {{{0, 1}}, 1}});
+  auto const rule0 = rule_type{{{0, 0}}, 0};
+  auto const rule1 = rule_type{{{0, 1}}, 1};
+  auto const initial_rule = classifier(i, {rule0, rule1});
 
-  auto const mutate = [](classifier& c, std::mt19937_64& rng) {
+  auto const mutate = [&rule0, &rule1](classifier& c, std::mt19937_64& rng) {
     auto unif = std::uniform_real_distribution<double>(0.0, 1.0);
     auto const prob_rule = 1.0 - 0.8 / (1.0 + std::exp(-double(c.complexity()) / 4 + 3));
     auto const n = c.get_raw_interpretation_ptr()->num_input(); // Number of input variables
@@ -49,7 +51,9 @@ auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alph
       c.add_rule(rule);
     } else { // Try modifying existing rule:
       auto rule = c.pop_random_rule(rng);
-      if (unif(rng) > (1 - prob_rule)) { // Otherwise just left the rule out.
+      if (rule == rule0 || rule == rule1) { // Do not touch initial rules
+        c.add_rule(rule);
+      } else if (unif(rng) > (1 - prob_rule)) { // Otherwise just left the rule out.
         if (unif(rng) < (1 / double(n))) { // Mutate category
           rule.second = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_categories());
         } else {
@@ -84,7 +88,7 @@ auto main(int argc, char *argv[]) -> int {
   auto const seed = cj::get_arg<size_t>(argc, argv, "seed", std::time(0));
   auto const trials = cj::get_arg<uint32_t>(argc, argv, "trials", 20);
   auto const nsets = cj::get_arg<uint32_t>(argc, argv, "nsets", 5); // How many fuzzy sets for each variables.
-  auto const pop_size = std::max(cj::get_arg<uint32_t>(argc, argv, "populations", 200), uint32_t{8});
+  auto const pop_size = std::max(cj::get_arg<uint32_t>(argc, argv, "populations", 400), uint32_t{8});
   auto const t_max = std::max(cj::get_arg<uint32_t>(argc, argv, "steps", 200), uint32_t{100});
   auto const alpha = cj::get_arg<double>(argc, argv, "alpha", 0.0005);
   auto const ptest = 0.1;
@@ -137,7 +141,10 @@ auto main(int argc, char *argv[]) -> int {
     << "Testing data size: " << test.nrows() << '\n';
 
   if (logic_name == "Łukasiewicz") {
-    trial<cj::lukasiewicz<double>>(seed, nsets, pop_size, t_max, alpha, data);
+    auto r = trial<cj::lukasiewicz<double>>(seed, nsets, pop_size, t_max, alpha, data);
+    std::cout << r << '\n';
+    std::cout << "Fitness (training): " << r.evaluate_all(data).tss(1) << '\n';
+    std::cout << "Fitness (testing): " << r.evaluate_all(test).tss(1) << '\n';
   }
 
 //  auto fitness = [=alpha](auto c, auto d) {

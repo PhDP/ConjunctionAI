@@ -30,7 +30,7 @@ namespace cj {
      * \brief True for non-null pointers.
      */
     operator bool() const {
-      return m_ptr != nullptr;
+      return bool(m_ptr);
     }
 
     /**
@@ -51,7 +51,7 @@ namespace cj {
      * \brief Returns a copy of the pointer.
      */
     auto get() const -> element_type const* {
-      return m_ptr;
+      return m_ptr.get();
     }
 
     /**
@@ -74,19 +74,19 @@ namespace cj {
   };
 
   template<typename T>
-  auto value_ptr<T>::operator==(value_ptr<element_type> const& other) const -> bool {
+  inline auto value_ptr<T>::operator==(value_ptr<element_type> const& other) const -> bool {
     return bool(m_ptr) && bool(other.m_ptr)?
       *m_ptr == *other.m_ptr : !bool(m_ptr) && !bool(other.m_ptr);
   }
 
   template<typename T>
-  auto value_ptr<T>::operator!=(value_ptr<element_type> const& other) const -> bool {
+  inline auto value_ptr<T>::operator!=(value_ptr<element_type> const& other) const -> bool {
     return bool(m_ptr) && bool(other.m_ptr)?
       *m_ptr != *other.m_ptr : !bool(m_ptr) != !bool(other.m_ptr);
   }
 
   template<typename T>
-  auto value_ptr<T>::operator<(value_ptr<element_type> const& other) const -> bool {
+  inline auto value_ptr<T>::operator<(value_ptr<element_type> const& other) const -> bool {
     return bool(m_ptr) && bool(other.m_ptr)?
       *m_ptr < *other.m_ptr : !bool(m_ptr) && bool(other.m_ptr);
   }

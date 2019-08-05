@@ -307,7 +307,9 @@ namespace cj {
     std::ostream& m_os;
     symbols const& m_sym;
 
-    show_vstr(std::ostream& os, symbols const& sym = unicode) : m_os(os), m_sym(sym) { }
+    show_vstr(std::ostream& os, symbols const& sym = unicode)
+      : m_os(os), m_sym(sym) {
+    }
 
     auto operator()(A const& a) -> void {
       m_os << a;
