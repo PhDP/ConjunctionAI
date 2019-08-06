@@ -35,7 +35,8 @@ auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alph
 
   auto const mutate = [&rule0, &rule1](classifier& c, std::mt19937_64& rng) {
     auto unif = std::uniform_real_distribution<double>(0.0, 1.0);
-    auto const prob_rule = 0.7 - 0.4 / (1.0 + std::exp(-double(c.complexity()) / 5 + 5));
+//    auto const prob_rule = 0.7 - 0.4 / (1.0 + std::exp(-double(c.complexity()) / 5 + 5));
+    auto const prob_rule = 0.6 - 0.4 / (1.0 + std::exp(-double(c.complexity()) / 2 + 5));
     auto const n = c.get_raw_interpretation_ptr()->num_input(); // Number of input variables
 
     std::cout << "Mutation (prob rule: " << prob_rule << "):\n";
@@ -55,24 +56,31 @@ auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alph
       std::cout << "\"\n";
       c.add_rule(rule);
     } else { // Try modifying existing rule:
-      std::cout << "  Modify rule \"";
       auto rule = c.pop_random_rule(rng);
+      std::cout << "  Modify rule \"";
       cj::show_rule<Truth, double, uint32_t>(std::cout, rule, c.get_raw_interpretation_ptr());
       std::cout << "\"\n";
       if (rule == rule0 || rule == rule1) { // Do not touch initial rules
+        std::cout << "  No modifications, put it back!\n";
         c.add_rule(rule);
       } else if (unif(rng) > (1 - prob_rule)) { // Otherwise just left the rule out.
         if (unif(rng) < (1 / double(n))) { // Mutate category
+          std::cout << "  Mutate output\n";
           rule.second = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_categories());
         } else {
           auto const input_id = uint32_t(unif(rng) * n);
+          std::cout << "  Mutate input " << input_id << " (" << c.get_raw_interpretation_ptr()->input_name(input_id) << "): ";
           if (rule.first.find(input_id) != rule.first.end() && unif(rng) < 0.5) {
             rule.first.erase(input_id);
+            std::cout << "    Remove it!\n";
           } else {
+            std::cout << "    Change it!\n";
             rule.first[input_id] = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_partitions(input_id));
           }
         }
         c.add_rule(rule);
+      } else {
+        std::cout << "  Remove rule entirely!\n";
       }
     }
   };
@@ -150,10 +158,26 @@ auto main(int argc, char *argv[]) -> int {
 
   if (logic_name == "Łukasiewicz") {
     auto r = trial<cj::lukasiewicz<double>>(seed, nsets, pop_size, t_max, alpha, data);
+
+    auto i = make_interpretation<cj::lukasiewicz<double>>(nsets, data);
+    auto const c = cj::fuzzy_classifier<cj::lukasiewicz<double>, double, uint32_t>(i, {{{{0, 0}}, 0}, {{{0, 1}}, 1}});
+
+    auto const i_train = c.evaluate_all(data).tss(1);
+    auto const i_test = c.evaluate_all(test).tss(1);
+    auto const b_train = r.evaluate_all(data).tss(1);
+    auto const b_test = r.evaluate_all(test).tss(1);
+
+    std::cout << "\n\n# Initial\n";
+    std::cout << c << '\n';
+    std::cout << "Initial Fitness (training): " << i_train << '\n';
+    std::cout << "Initial Fitness (testing): " << i_test << '\n';
+    std::cout << "# Best \n";
     std::cout << r << '\n';
-    std::cout << "Fitness (training): " << r.evaluate_all(data).tss(1) << '\n';
-    std::cout << "Fitness (testing): " << r.evaluate_all(test).tss(1) << '\n';
+    std::cout << "Evolved Fitness (training): " << b_train << '\n';
+    std::cout << "Evolved Fitness (testing): " << b_test << '\n';
+    std::cout << "Testing delta: " << (b_test - i_test) << '\n';
   }
+
 
 //  auto fitness = [=alpha](auto c, auto d) {
 //    return c.evaluate_all(d).tss(1) - alpha * c.complexity();

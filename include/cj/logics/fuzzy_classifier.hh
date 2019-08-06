@@ -43,9 +43,7 @@ namespace cj {
      * \brief Builds a fuzzy knowledge base with a pointer to fuzzy_set and (optionally) a set of
      *        intitial rules.
      */
-    fuzzy_classifier(interpretation_ptr const& i, rules_type const& initial_rules = {})
-      : m_i(i), m_rules{initial_rules} {
-    }
+    fuzzy_classifier(interpretation_ptr const& i, rules_type const& initial_rules = {});
 
     /**
      * \brief Whether the knowledge base has no rules.
@@ -94,16 +92,12 @@ namespace cj {
     /**
      * \brief Adds a rule (unless it is already there).
      */
-    auto add_rule(antecedent_type const& a, id_type c) -> void {
-      m_rules[a] = c;
-    }
+    auto add_rule(antecedent_type const& a, id_type c) -> bool;
 
     /**
      * \brief Adds a rule (unless it is already there).
      */
-    auto add_rule(rule_type const& r) -> void {
-      m_rules.insert(r);
-    }
+    auto add_rule(rule_type const& r) -> bool;
 
     /**
      * \brief Removes a rule (unless it is already there).
@@ -190,22 +184,31 @@ namespace cj {
     }
 
     /**
-     * \brief ...
+     * \brief This function will evolve a classifier given a set of training data points.
      *
-     * \param fs          Initial knowledge bases.
-     * \param mut         Mutation function.
-     * \param fit         Fitness function.
-     * \param stop        ...
+     * \param initial     Initial knowledge bases.
+     * \param mut         Function that mutates a classifier ((self_type&, rng&) -> void).
+     * \param fit         Measures fitness of a classifier given training data (self_type const&,
+     *                    data_matrix<input_type, id_type> const&) -> double).
+     * \param stop        Criteria to stop early (before the last timestep) as a function of the
+     *                    fitness of the best classifier.
      * \param training    Training data.
-     * \param pop_size    ...
-     * \param elites      ...
+     * \param pop_size    Population size (number of classifiers used during evolution).
+     * \param elites      Number of classifier to pick for mating and leave unchanged (elites <
+     *                    pop_size and elites > 0).
+     * \param t_max       Maximum number of time steps.
      * \param seed        Seed for the random number generator.
+     * \param n           The number of mutations for each classifier for each generation is a
+     *                    Binomial with 'n' trials.
+     * \param pr          The number of mutations for each classifier for each generation is a
+     *                    Binomial with 'pr' probability.
      * \return            Best classifier
      */
     static auto evolve(self_type initial, mutate_function const& mut, fitness_function const& fit,
       std::function<bool(double)> const& stop,
       data_matrix<input_type, id_type> const& training, size_t const pop_size = 1000,
-      size_t const elites = 50, size_t const t_max = 1000, size_t const seed = 42) -> self_type;
+      size_t const elites = 50, size_t const t_max = 1000, size_t const seed = 42,
+      size_t const n = 100, double const pr = 0.02) -> self_type;
 
    private:
     rules_type m_rules;
@@ -321,6 +324,33 @@ namespace cj {
   };
 
   template<typename Truth, typename Input, typename Id>
+  fuzzy_classifier<Truth, Input, Id>::fuzzy_classifier(interpretation_ptr const& i, rules_type const& initial_rules)
+    : m_i(i), m_rules{initial_rules} {
+    auto it = m_rules.find({});
+    if (it != m_rules.end()) {
+      m_rules.erase(it);
+    }
+  }
+
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::add_rule(antecedent_type const& a, id_type c) -> bool {
+    if (!a.empty()) {
+      m_rules[a] = c;
+      return true;
+    }
+    return false;
+  }
+
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::add_rule(rule_type const& r) -> bool {
+    if (!r.first.empty()) {
+      m_rules.insert(r);
+      return true;
+    }
+    return false;
+  }
+
+  template<typename Truth, typename Input, typename Id>
   auto fuzzy_classifier<Truth, Input, Id>::get_random_rule(std::mt19937_64& rng) const -> rule_type {
     if (empty()) {
       return rule_type{};
@@ -331,18 +361,7 @@ namespace cj {
     return *it;
   }
 
-  template<typename Truth, typename Input, typename Id>
-  auto fuzzy_classifier<Truth, Input, Id>::pop_random_rule(std::mt19937_64& rng) -> rule_type {
-    if (empty()) {
-      return rule_type{};
-    }
-    auto unif = std::uniform_int_distribution<size_t>(0, size() - 1);
-    auto it = m_rules.begin();
-    std::advance(it, unif(rng));
-    auto p = rule_type{*it};
-    m_rules.erase(it);
-    return p;
-  }
+  // POP RULE IS HERE!!!!!
 
   template<typename Truth, typename Input, typename Id>
   auto fuzzy_classifier<Truth, Input, Id>::evaluate(vector<input_type> const& row) const -> id_type {
@@ -371,13 +390,13 @@ namespace cj {
   auto fuzzy_classifier<Truth, Input, Id>::evolve(self_type initial, mutate_function const& mut,
       fitness_function const& fit, std::function<bool(double)> const& stop,
       data_matrix<input_type, id_type> const& training, size_t const pop_size, size_t const elites,
-      size_t const t_max, size_t const seed) -> self_type {
+      size_t const t_max, size_t const seed, size_t const n, double const pr) -> self_type {
     assert(pop_size > 0);
     assert(elites > 0);
     assert(elites < pop_size);
     assert(t_max > 0);
 
-    auto mutations = std::binomial_distribution<int>(100, 0.02);
+    auto mutations = std::binomial_distribution<size_t>(n, pr);
     auto const inter = initial.get_interpretation_ptr();
 
     auto const non_elites = pop_size - elites;
@@ -398,11 +417,11 @@ namespace cj {
       for (auto p = size_t{0}; p < pop_size; ++p) {
         auto const num_mutations = mutations(rng);
         std::cout << "# p " << p << " (mutations: " << num_mutations << ")\n";
-        std::cout << "Before:\n" << pop[p] << '\n';
+        std::cout << "Before (size " << pop[p].size() << "):\n" << pop[p] << '\n';
         for (auto m = size_t{0}; m < num_mutations; ++m) {
           mut(pop[p], rng);
         }
-        if (num_mutations) std::cout << "After:\n" << pop[p] << '\n';
+        if (num_mutations) std::cout << "\nAfter (size " << pop[p].size() << "):\n" << pop[p] << '\n';
         auto const fitness = fit(pop[p], training);
         std::cout << "New fitness: " << fitness << '\n';
         fitnesses.try_insert(fitness, p);
@@ -454,6 +473,26 @@ namespace cj {
       }
       os << " then " << i->category_name(p.second);
     }
+  }
+
+  // Move back above!!!!!
+  template<typename Truth, typename Input, typename Id>
+  auto fuzzy_classifier<Truth, Input, Id>::pop_random_rule(std::mt19937_64& rng) -> rule_type {
+    std::cout << "  Popping rule: ";
+    if (empty()) {
+      std::cout << "Empty!!!!!!!!\n";
+      return rule_type{};
+    }
+    auto unif = std::uniform_int_distribution<size_t>(0, size() - 1);
+    auto it = m_rules.begin();
+    auto const by = unif(rng);
+    std::cout << '#' << by << " (size: " << m_rules.size() << "): \"";
+    std::advance(it, by);
+    auto p = rule_type{*it};
+    show_rule<Truth, Input, Id>(std::cout, p, get_raw_interpretation_ptr());
+    std::cout << "\"\n";
+    m_rules.erase(it);
+    return p;
   }
 
   template<typename Truth, typename Input, typename Id>

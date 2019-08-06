@@ -12,19 +12,19 @@ TEST(CJFuzzyClassifier, CreatesLukasiewiczInterpretation) {
   EXPECT_EQ(3, i->num_partitions(0));
   EXPECT_EQ(2, i->num_categories());
   EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 0, -100.0).value);
-  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 0, 0.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(0, 0, 125.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 0, 250.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 1, 0.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(0, 1, 125.0).value);
-  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 1, 250.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(0, 1, 375.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 1, 500.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 1, 900.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 2, 250.0).value);
-  EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(0, 2, 375.0).value);
-  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 2, 500.0).value);
-  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 2, 600.0).value);
+  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 0,    0.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(0, 0,  125.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 0,  250.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 1,    0.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(0, 1,  125.0).value);
+  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 1,  250.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(0, 1,  375.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 1,  500.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 1,  900.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(0, 2,  250.0).value);
+  EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(0, 2,  375.0).value);
+  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 2,  500.0).value);
+  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(0, 2,  600.0).value);
   EXPECT_EQ("Triangular_{3}(0, 500)", i->partition_name(0));
   EXPECT_EQ("is low", i->label(0, 0));
   EXPECT_EQ("is average", i->label(0, 1));
@@ -35,7 +35,7 @@ TEST(CJFuzzyClassifier, CreatesLukasiewiczInterpretation) {
   EXPECT_EQ(3, i->num_partitions(0));
   EXPECT_EQ(9, i->num_partitions(1));
   EXPECT_EQ(2, i->num_categories());
-  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(1, 0, 5.0).value);
+  EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(1, 0,  5.0).value);
   EXPECT_DOUBLE_EQ(luka{1.0}.value, i->get(1, 3, 25.0).value);
   EXPECT_DOUBLE_EQ(luka{0.5}.value, i->get(1, 4, 27.5).value);
   EXPECT_DOUBLE_EQ(luka{0.0}.value, i->get(1, 7, 80.0).value);
@@ -54,9 +54,9 @@ TEST(CJFuzzyClassifier, CreatesLukasiewiczClassifier) {
   using classifier = cj::fuzzy_classifier<luka, double>;
 
   auto i = classifier::make_interpretation({"No-interaction", "Interaction"});
-  i->add_triangular_partition("Body mass", 3, 0.0, 500.0);
-  i->add_triangular_partition("Brain mass", 3, 10.0, 50.0);
-  i->add_triangular_partition("Whatever", 3, 0.0, 1.0);
+  i->add_triangular_partition("Body mass",  3,  0.0, 500.0);
+  i->add_triangular_partition("Brain mass", 3, 10.0,  50.0);
+  i->add_triangular_partition("Whatever",   3,  0.0,   1.0);
   auto c = classifier{i};
 
   EXPECT_TRUE(c.empty());
@@ -89,9 +89,9 @@ TEST(CJFuzzyClassifier, EvaluatesDataMatrixFuzzyClassifier) {
   using classifier = cj::fuzzy_classifier<luka, double>;
 
   auto i = classifier::make_interpretation({"No-interaction", "Interaction"});
-  i->add_triangular_partition("Body mass", 3, 0.0, 500.0);
-  i->add_triangular_partition("Brain mass", 3, 10.0, 50.0);
-  i->add_triangular_partition("Whatever", 3, 0.0, 1.0);
+  i->add_triangular_partition("Body mass",  3,  0.0, 500.0);
+  i->add_triangular_partition("Brain mass", 3, 10.0,  50.0);
+  i->add_triangular_partition("Whatever",   3,  0.0,   1.0);
   auto c = classifier{i};
 
   c.add_rule({{0, 2}, {2, 1}}, 0);
@@ -215,4 +215,32 @@ TEST(CJFuzzyClassifier, PopRandomRuleFromClassifierWithSeveralRules) {
 
   EXPECT_TRUE(c.pop_random_rule(rng).first.empty());
   EXPECT_TRUE(c.pop_random_rule(rng).first.empty());
+}
+
+TEST(CJFuzzyClassifier, HavingEmptyRulesInConstructor) {
+  using prod = cj::product<double>;
+  using classifier = cj::fuzzy_classifier<prod, double>;
+
+  auto r0 = typename classifier::rule_type{{{0, 2}, {2, 1}}, 0};
+  auto r1 = typename classifier::rule_type{{{1, 2}, {3, 0}}, 1};
+  auto r2 = typename classifier::rule_type{{}, 2};
+  auto r3 = typename classifier::rule_type{{}, 1};
+  auto c = classifier{classifier::make_interpretation({"Blah", "Bleh"}), {r0, r1, r2, r3}};
+  EXPECT_EQ(2, c.size());
+}
+
+TEST(CJFuzzyClassifier, AddingEmptyRuleToClassifier) {
+  using prod = cj::product<double>;
+  using classifier = cj::fuzzy_classifier<prod, double>;
+
+  auto c = classifier{classifier::make_interpretation({"Blah", "Bleh"})};
+  auto r0 = typename classifier::rule_type{{{0, 2}, {2, 1}}, 0};
+  auto r1 = typename classifier::rule_type{{{1, 2}, {3, 0}}, 1};
+  auto r2 = typename classifier::rule_type{{}, 2};
+  auto r3 = typename classifier::rule_type{{}, 1};
+  EXPECT_TRUE(c.add_rule(r0));
+  EXPECT_TRUE(c.add_rule(r1));
+  EXPECT_FALSE(c.add_rule(r2));
+  EXPECT_FALSE(c.add_rule(r3));
+  EXPECT_EQ(2, c.size());
 }
