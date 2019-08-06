@@ -35,11 +35,14 @@ auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alph
 
   auto const mutate = [&rule0, &rule1](classifier& c, std::mt19937_64& rng) {
     auto unif = std::uniform_real_distribution<double>(0.0, 1.0);
-    auto const prob_rule = 1.0 - 0.8 / (1.0 + std::exp(-double(c.complexity()) / 4 + 3));
+    auto const prob_rule = 0.7 - 0.4 / (1.0 + std::exp(-double(c.complexity()) / 5 + 5));
     auto const n = c.get_raw_interpretation_ptr()->num_input(); // Number of input variables
+
+    std::cout << "Mutation (prob rule: " << prob_rule << "):\n";
 
     // Add rule:
     if (c.size() < 3 || unif(rng) < prob_rule) {
+      std::cout << "  Add rule \"";
       // Number of input variables in the new rule:
       auto const n_input_vars = 1 + unif(rng) * (n - 1);
       auto rule = rule_type{};
@@ -48,9 +51,14 @@ auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alph
         rule.first[input_id] = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_partitions(input_id));
       }
       rule.second = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_categories());
+      cj::show_rule<Truth, double, uint32_t>(std::cout, rule, c.get_raw_interpretation_ptr());
+      std::cout << "\"\n";
       c.add_rule(rule);
     } else { // Try modifying existing rule:
+      std::cout << "  Modify rule \"";
       auto rule = c.pop_random_rule(rng);
+      cj::show_rule<Truth, double, uint32_t>(std::cout, rule, c.get_raw_interpretation_ptr());
+      std::cout << "\"\n";
       if (rule == rule0 || rule == rule1) { // Do not touch initial rules
         c.add_rule(rule);
       } else if (unif(rng) > (1 - prob_rule)) { // Otherwise just left the rule out.
@@ -88,8 +96,8 @@ auto main(int argc, char *argv[]) -> int {
   auto const seed = cj::get_arg<size_t>(argc, argv, "seed", std::time(0));
   auto const trials = cj::get_arg<uint32_t>(argc, argv, "trials", 20);
   auto const nsets = cj::get_arg<uint32_t>(argc, argv, "nsets", 5); // How many fuzzy sets for each variables.
-  auto const pop_size = std::max(cj::get_arg<uint32_t>(argc, argv, "populations", 400), uint32_t{8});
-  auto const t_max = std::max(cj::get_arg<uint32_t>(argc, argv, "steps", 200), uint32_t{100});
+  auto const pop_size = std::max(cj::get_arg<uint32_t>(argc, argv, "populations", 20), uint32_t{8});
+  auto const t_max = std::max(cj::get_arg<uint32_t>(argc, argv, "steps", 10), uint32_t{100});
   auto const alpha = cj::get_arg<double>(argc, argv, "alpha", 0.0005);
   auto const ptest = 0.1;
 

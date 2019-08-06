@@ -325,13 +325,9 @@ namespace cj {
     if (empty()) {
       return rule_type{};
     }
-    if (size() == 1) {
-      return *m_rules.begin();
-    }
     auto unif = std::uniform_int_distribution<size_t>(0, size() - 1);
-    auto const by = unif(rng);
     auto it = m_rules.begin();
-    std::advance(it, by);
+    std::advance(it, unif(rng));
     return *it;
   }
 
@@ -340,15 +336,9 @@ namespace cj {
     if (empty()) {
       return rule_type{};
     }
-    auto it = m_rules.begin();
-    if (size() == 1) {
-      auto p = rule_type{*it};
-      m_rules.erase(it);
-      return p;
-    }
     auto unif = std::uniform_int_distribution<size_t>(0, size() - 1);
-    auto const by = unif(rng);
-    std::advance(it, by);
+    auto it = m_rules.begin();
+    std::advance(it, unif(rng));
     auto p = rule_type{*it};
     m_rules.erase(it);
     return p;
@@ -387,7 +377,7 @@ namespace cj {
     assert(elites < pop_size);
     assert(t_max > 0);
 
-    auto mutations = std::binomial_distribution<int>(100, 0.001);
+    auto mutations = std::binomial_distribution<int>(100, 0.02);
     auto const inter = initial.get_interpretation_ptr();
 
     auto const non_elites = pop_size - elites;
@@ -396,17 +386,28 @@ namespace cj {
     // Creates the initial population of solutions:
     auto pop = vector<self_type>(pop_size, initial);
     auto fitnesses = top_n_multimap<double, size_t>(elites); // Maps the highest fitness to the population's index in 'pop'.
-    fitnesses.try_insert(fit(initial, training), 0);
+
+    std::cout << "\n\n";
 
     auto t = size_t{0};
     while (true) {
+
+      std::cout << "## t " << t << '\n';
       // Mutates and store fitness:
+      fitnesses.clear();
       for (auto p = size_t{0}; p < pop_size; ++p) {
         auto const num_mutations = mutations(rng);
+        std::cout << "# p " << p << " (mutations: " << num_mutations << ")\n";
+        std::cout << "Before:\n" << pop[p] << '\n';
         for (auto m = size_t{0}; m < num_mutations; ++m) {
           mut(pop[p], rng);
         }
-        fitnesses.try_insert(fit(pop[p], training), p);
+        if (num_mutations) std::cout << "After:\n" << pop[p] << '\n';
+        auto const fitness = fit(pop[p], training);
+        std::cout << "New fitness: " << fitness << '\n';
+        fitnesses.try_insert(fitness, p);
+        std::cout << "Fitnesses: " << intersperse_pairs(fitnesses.begin(), fitnesses.end()) << '\n';
+        std::cout << "\n\n";
       }
       if (stop(fitnesses.maximum_key()) || t++ == t_max) {
         break;
@@ -414,14 +415,19 @@ namespace cj {
       auto const fittest = fitnesses.set_of_values();
       // Only mate the non-elites, keep the elites untouched:
       for (auto p = size_t{0}; p < pop_size; ++p) {
+        std::cout << "Mating " << p << '\n';
         if (fittest.find(p) == fittest.end()) {
           auto const parents = pick_unique_pair(fittest, rng);
           pop[p] = self_type {
             inter,
             map_intersection_split_union(pop[parents[0]].rules(), pop[parents[1]].rules(), rng)
           };
+          std::cout << "Build from the union of " << parents[0] << " and " << parents[1] << '\n';
+        } else {
+          std::cout << "Elite, do not touch!\n";
         }
       }
+      std::cout << "\n\n\n\n\n";
     }
     return pop[fitnesses.maximum().second];
   }
