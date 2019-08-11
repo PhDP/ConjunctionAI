@@ -9,6 +9,7 @@
 #include <ctime>
 #include "cj/logics/fuzzy_classifier.hh"
 #include "cj/utils/cl_reader.hh"
+#include "cj/math/statistics.hh"
 
 template<typename Truth>
 auto make_interpretation(size_t nsets, cj::data_matrix<double, uint32_t> const& dm)
@@ -22,7 +23,7 @@ auto make_interpretation(size_t nsets, cj::data_matrix<double, uint32_t> const& 
 }
 
 template<typename Truth>
-auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alpha, cj::data_matrix<double, uint32_t> const& dm)
+auto trial(size_t const seed, size_t const nsets, size_t const pop_size, size_t const t_max, double const alpha, cj::data_matrix<double, uint32_t> const& dm)
           -> cj::fuzzy_classifier<Truth, double, uint32_t> {
   using classifier = cj::fuzzy_classifier<Truth, double, uint32_t>;
   using rule_type = typename classifier::rule_type;
@@ -39,11 +40,11 @@ auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alph
     auto const prob_rule = 0.6 - 0.4 / (1.0 + std::exp(-double(c.complexity()) / 2 + 5));
     auto const n = c.get_raw_interpretation_ptr()->num_input(); // Number of input variables
 
-    std::cout << "Mutation (prob rule: " << prob_rule << "):\n";
+//    std::cout << "Mutation (prob rule: " << prob_rule << "):\n";
 
     // Add rule:
     if (c.size() < 3 || unif(rng) < prob_rule) {
-      std::cout << "  Add rule \"";
+//      std::cout << "  Add rule \"";
       // Number of input variables in the new rule:
       auto const n_input_vars = 1 + unif(rng) * (n - 1);
       auto rule = rule_type{};
@@ -52,35 +53,39 @@ auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alph
         rule.first[input_id] = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_partitions(input_id));
       }
       rule.second = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_categories());
-      cj::show_rule<Truth, double, uint32_t>(std::cout, rule, c.get_raw_interpretation_ptr());
-      std::cout << "\"\n";
+//      cj::show_rule<Truth, double, uint32_t>(std::cout, rule, c.get_raw_interpretation_ptr());
+//      std::cout << "\"\n";
       c.add_rule(rule);
     } else { // Try modifying existing rule:
       auto rule = c.pop_random_rule(rng);
-      std::cout << "  Modify rule \"";
-      cj::show_rule<Truth, double, uint32_t>(std::cout, rule, c.get_raw_interpretation_ptr());
-      std::cout << "\"\n";
+//      std::cout << "  Modify rule \"";
+//      cj::show_rule<Truth, double, uint32_t>(std::cout, rule, c.get_raw_interpretation_ptr());
+//      std::cout << "\"\n";
       if (rule == rule0 || rule == rule1) { // Do not touch initial rules
-        std::cout << "  No modifications, put it back!\n";
+//        std::cout << "  No modifications, put it back!\n";
         c.add_rule(rule);
       } else if (unif(rng) > (1 - prob_rule)) { // Otherwise just left the rule out.
         if (unif(rng) < (1 / double(n))) { // Mutate category
-          std::cout << "  Mutate output\n";
+//          std::cout << "  Mutate output\n";
           rule.second = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_categories());
         } else {
+          // 1/3 of removing
+          // 1/3 of changing
+          // 1/3 of adding
+
           auto const input_id = uint32_t(unif(rng) * n);
-          std::cout << "  Mutate input " << input_id << " (" << c.get_raw_interpretation_ptr()->input_name(input_id) << "): ";
+//          std::cout << "  Mutate input " << input_id << " (" << c.get_raw_interpretation_ptr()->input_name(input_id) << "): ";
           if (rule.first.find(input_id) != rule.first.end() && unif(rng) < 0.5) {
             rule.first.erase(input_id);
-            std::cout << "    Remove it!\n";
+//            std::cout << "    Remove it!\n";
           } else {
-            std::cout << "    Change it!\n";
+//            std::cout << "    Change it!\n";
             rule.first[input_id] = uint32_t(unif(rng) * c.get_raw_interpretation_ptr()->num_partitions(input_id));
           }
         }
         c.add_rule(rule);
       } else {
-        std::cout << "  Remove rule entirely!\n";
+//        std::cout << "  Remove rule entirely!\n";
       }
     }
   };
@@ -95,8 +100,67 @@ auto trial(size_t seed, size_t nsets, size_t pop_size, size_t t_max, double alph
 }
 
 template<typename Truth>
-auto parallel_trials(size_t threads) -> double {
-  return 0.0; // TSS
+auto parallel_trials(cj::string const& tnorm, size_t const trials, size_t const threads,
+                     size_t const seed, size_t const nsets, size_t const pop_size,
+                     size_t const t_max, double alpha, cj::data_matrix<double, uint32_t> const& dm,
+                     cj::data_matrix<double, uint32_t> const& testing,
+                     char const* filename_prefix) -> void {
+  using classifier = cj::fuzzy_classifier<Truth, double, uint32_t>;
+  auto futures = cj::vector<std::future<classifier>>{};
+  futures.reserve(trials);
+
+  auto rng = std::mt19937_64(seed);
+  auto seed_gen = std::uniform_int_distribution<size_t>{};
+
+  auto seeds = cj::vector<size_t>{};
+  seeds.reserve(trials);
+  for (auto t = 0; t < trials; ++t) {
+    seeds.push_back(seed_gen(rng));
+  }
+
+  for (auto t = 0u; t < trials; ++t) {
+    futures.push_back(std::async([&](size_t const s) {
+      return trial<Truth>(s, nsets, pop_size, t_max, alpha, dm);
+    }, seeds[t]));
+  }
+
+  auto bests = cj::vector<classifier>{};
+  bests.reserve(trials);
+  for (auto& f : futures) {
+    bests.push_back(f.get());
+  }
+
+  auto tsses = cj::vector<double>{};
+  tsses.reserve(trials);
+  for (auto const& b : bests) {
+    tsses.push_back(b.evaluate_all(testing).tss(1));
+  }
+  auto const evolved_tss = cj::fast_mean(tsses.begin(), tsses.end());
+
+  auto i = make_interpretation<Truth>(nsets, dm);
+  auto const initial_c = classifier(i, {{{{0, 0}}, 0}, {{{0, 1}}, 1}});
+  auto const initial_tss = initial_c.evaluate_all(testing).tss(1);
+
+  // Print results to file:
+  auto const filename = cj::string{filename_prefix} + cj::string{"-"}
+                        + boost::lexical_cast<cj::string>(seed) + cj::string{".txt"};
+
+  auto out = std::ofstream(filename);
+
+  out
+    << "Seed: " << seed << '\n'
+    << "Tnorm: " << tnorm << '\n'
+    << "Trials: " << trials << '\n'
+    << "Sets / input variables: " << nsets << '\n'
+    << "Population size: " << pop_size << '\n'
+    << "T(max): " << t_max << '\n'
+    << "Alpha: " << alpha << '\n'
+    << '\n'
+    << "Tss(initial): " << initial_tss << '\n'
+    << "Tss(evolved): " << evolved_tss << '\n'
+    << "Improvement: " << (evolved_tss - initial_tss) << '\n';
+
+  out.close();
 }
 
 auto main(int argc, char *argv[]) -> int {
@@ -157,27 +221,8 @@ auto main(int argc, char *argv[]) -> int {
     << "Testing data size: " << test.nrows() << '\n';
 
   if (logic_name == "Łukasiewicz") {
-    auto r = trial<cj::lukasiewicz<double>>(seed, nsets, pop_size, t_max, alpha, data);
-
-    auto i = make_interpretation<cj::lukasiewicz<double>>(nsets, data);
-    auto const c = cj::fuzzy_classifier<cj::lukasiewicz<double>, double, uint32_t>(i, {{{{0, 0}}, 0}, {{{0, 1}}, 1}});
-
-    auto const i_train = c.evaluate_all(data).tss(1);
-    auto const i_test = c.evaluate_all(test).tss(1);
-    auto const b_train = r.evaluate_all(data).tss(1);
-    auto const b_test = r.evaluate_all(test).tss(1);
-
-    std::cout << "\n\n# Initial\n";
-    std::cout << c << '\n';
-    std::cout << "Initial Fitness (training): " << i_train << '\n';
-    std::cout << "Initial Fitness (testing): " << i_test << '\n';
-    std::cout << "# Best \n";
-    std::cout << r << '\n';
-    std::cout << "Evolved Fitness (training): " << b_train << '\n';
-    std::cout << "Evolved Fitness (testing): " << b_test << '\n';
-    std::cout << "Testing delta: " << (b_test - i_test) << '\n';
+    parallel_trials<cj::lukasiewicz<double>>("Łukasiewicz", trials, 16, seed, nsets, pop_size, t_max, alpha, data, test, "Luka");
   }
-
 
 //  auto fitness = [=alpha](auto c, auto d) {
 //    return c.evaluate_all(d).tss(1) - alpha * c.complexity();

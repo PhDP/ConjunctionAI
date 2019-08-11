@@ -126,7 +126,7 @@ namespace cj {
       std::is_floating_point<typename std::iterator_traits<It>::value_type>::value>>
   auto fast_mean(It a, It b) -> typename std::iterator_traits<It>::value_type {
     auto const n = std::distance(a, b);
-    return std::accumulate(a, b, std::iterator_traits<It>::value_type(0)) / n;
+    return std::accumulate(a, b, typename std::iterator_traits<It>::value_type(0)) / n;
   }
 
   /**

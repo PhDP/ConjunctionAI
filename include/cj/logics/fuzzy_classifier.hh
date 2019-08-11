@@ -406,27 +406,27 @@ namespace cj {
     auto pop = vector<self_type>(pop_size, initial);
     auto fitnesses = top_n_multimap<double, size_t>(elites); // Maps the highest fitness to the population's index in 'pop'.
 
-    std::cout << "\n\n";
+//    std::cout << "\n\n";
 
     auto t = size_t{0};
     while (true) {
 
-      std::cout << "## t " << t << '\n';
+//      std::cout << "## t " << t << '\n';
       // Mutates and store fitness:
       fitnesses.clear();
       for (auto p = size_t{0}; p < pop_size; ++p) {
         auto const num_mutations = mutations(rng);
-        std::cout << "# p " << p << " (mutations: " << num_mutations << ")\n";
-        std::cout << "Before (size " << pop[p].size() << "):\n" << pop[p] << '\n';
+//        std::cout << "# p " << p << " (mutations: " << num_mutations << ")\n";
+//        std::cout << "Before (size " << pop[p].size() << "):\n" << pop[p] << '\n';
         for (auto m = size_t{0}; m < num_mutations; ++m) {
           mut(pop[p], rng);
         }
-        if (num_mutations) std::cout << "\nAfter (size " << pop[p].size() << "):\n" << pop[p] << '\n';
+//        if (num_mutations) std::cout << "\nAfter (size " << pop[p].size() << "):\n" << pop[p] << '\n';
         auto const fitness = fit(pop[p], training);
-        std::cout << "New fitness: " << fitness << '\n';
+//        std::cout << "New fitness: " << fitness << '\n';
         fitnesses.try_insert(fitness, p);
-        std::cout << "Fitnesses: " << intersperse_pairs(fitnesses.begin(), fitnesses.end()) << '\n';
-        std::cout << "\n\n";
+//        std::cout << "Fitnesses: " << intersperse_pairs(fitnesses.begin(), fitnesses.end()) << '\n';
+//        std::cout << "\n\n";
       }
       if (stop(fitnesses.maximum_key()) || t++ == t_max) {
         break;
@@ -434,19 +434,19 @@ namespace cj {
       auto const fittest = fitnesses.set_of_values();
       // Only mate the non-elites, keep the elites untouched:
       for (auto p = size_t{0}; p < pop_size; ++p) {
-        std::cout << "Mating " << p << '\n';
+//        std::cout << "Mating " << p << '\n';
         if (fittest.find(p) == fittest.end()) {
           auto const parents = pick_unique_pair(fittest, rng);
           pop[p] = self_type {
             inter,
             map_intersection_split_union(pop[parents[0]].rules(), pop[parents[1]].rules(), rng)
           };
-          std::cout << "Build from the union of " << parents[0] << " and " << parents[1] << '\n';
+//          std::cout << "Build from the union of " << parents[0] << " and " << parents[1] << '\n';
         } else {
-          std::cout << "Elite, do not touch!\n";
+//          std::cout << "Elite, do not touch!\n";
         }
       }
-      std::cout << "\n\n\n\n\n";
+//      std::cout << "\n\n\n\n\n";
     }
     return pop[fitnesses.maximum().second];
   }
@@ -478,19 +478,19 @@ namespace cj {
   // Move back above!!!!!
   template<typename Truth, typename Input, typename Id>
   auto fuzzy_classifier<Truth, Input, Id>::pop_random_rule(std::mt19937_64& rng) -> rule_type {
-    std::cout << "  Popping rule: ";
+//    std::cout << "  Popping rule: ";
     if (empty()) {
-      std::cout << "Empty!!!!!!!!\n";
+//      std::cout << "Empty!!!!!!!!\n";
       return rule_type{};
     }
     auto unif = std::uniform_int_distribution<size_t>(0, size() - 1);
     auto it = m_rules.begin();
     auto const by = unif(rng);
-    std::cout << '#' << by << " (size: " << m_rules.size() << "): \"";
+//    std::cout << '#' << by << " (size: " << m_rules.size() << "): \"";
     std::advance(it, by);
     auto p = rule_type{*it};
-    show_rule<Truth, Input, Id>(std::cout, p, get_raw_interpretation_ptr());
-    std::cout << "\"\n";
+//    show_rule<Truth, Input, Id>(std::cout, p, get_raw_interpretation_ptr());
+//    std::cout << "\"\n";
     m_rules.erase(it);
     return p;
   }
