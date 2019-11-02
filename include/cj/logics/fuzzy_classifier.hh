@@ -406,47 +406,33 @@ namespace cj {
     auto pop = vector<self_type>(pop_size, initial);
     auto fitnesses = top_n_multimap<double, size_t>(elites); // Maps the highest fitness to the population's index in 'pop'.
 
-//    std::cout << "\n\n";
-
     auto t = size_t{0};
     while (true) {
-
-//      std::cout << "## t " << t << '\n';
       // Mutates and store fitness:
       fitnesses.clear();
       for (auto p = size_t{0}; p < pop_size; ++p) {
         auto const num_mutations = mutations(rng);
-//        std::cout << "# p " << p << " (mutations: " << num_mutations << ")\n";
-//        std::cout << "Before (size " << pop[p].size() << "):\n" << pop[p] << '\n';
         for (auto m = size_t{0}; m < num_mutations; ++m) {
           mut(pop[p], rng);
         }
-//        if (num_mutations) std::cout << "\nAfter (size " << pop[p].size() << "):\n" << pop[p] << '\n';
         auto const fitness = fit(pop[p], training);
-//        std::cout << "New fitness: " << fitness << '\n';
         fitnesses.try_insert(fitness, p);
-//        std::cout << "Fitnesses: " << intersperse_pairs(fitnesses.begin(), fitnesses.end()) << '\n';
-//        std::cout << "\n\n";
       }
       if (stop(fitnesses.maximum_key()) || t++ == t_max) {
         break;
       }
+
       auto const fittest = fitnesses.set_of_values();
       // Only mate the non-elites, keep the elites untouched:
       for (auto p = size_t{0}; p < pop_size; ++p) {
-//        std::cout << "Mating " << p << '\n';
         if (fittest.find(p) == fittest.end()) {
           auto const parents = pick_unique_pair(fittest, rng);
           pop[p] = self_type {
             inter,
             map_intersection_split_union(pop[parents[0]].rules(), pop[parents[1]].rules(), rng)
           };
-//          std::cout << "Build from the union of " << parents[0] << " and " << parents[1] << '\n';
-        } else {
-//          std::cout << "Elite, do not touch!\n";
         }
       }
-//      std::cout << "\n\n\n\n\n";
     }
     return pop[fitnesses.maximum().second];
   }

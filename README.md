@@ -1,39 +1,10 @@
 <img src='http://phdp.github.io/images/cj-200.png' alt='Conjunction logo' align='right'/>
 
-ConjunctionAI is an AI library to learn and reason with clear models.
-ConjunctionAI achieves this by exploring what lies at the intersection of
-**classical logics**, which are used to formalize mathematics, encode scientific
-theories and complex ideas; **probability theory**, which is used to model
-uncertainty, and lastly **many-valued logic**, which are used to model vagueness
-and serves as an important theoreritcal frameworks to unique classical and
-probabilistic logics.
-
-ConjunctionAI is a C++17 template library with a Python interface (and maybe an
-R one in the near future).
-
-## Code organization
-
-Math objects:
-
-| Object          | TLDR;                                                     | Where? |
-| --------------- | --------------------------------------------------------- | ------ |
-| Set             | Standard sets & many type traits used across all sets     | set.hh |
-| Fuzzy set       | Discrete fuzzy sets                                       | fuzzy_set.hh |
-| Fuzzy partition | Function to generate continuous fuzzy sets to partition an input space | fuzzy_partition.hh |
-| Graph           | Extremely generic type traits and functions for standard and fuzzy graphs | graph.hh |
-| Truth           | Defines truth classes for many-valued logics              | truth.hh |
-
-Logics (here, zeroth-order logic is a synonym of propositional logic):
-
-| Language                    | Logic         | Epistemology                              | Where?                     |
-| --------------------------- | ------------- | ----------------------------------------- | -------------------------- |
-| Fuzzy rule-based classifier | Zeroth-order  | Many-valued                               | fuzzy_classifier.hh        |
-| First-order logic           | First-order   | Bivalent or Many-Valued                   | fol.hh                     |
-| Hybrid Markov logic         | First-order   | Probabilistic + Many-valued-ish :star2:   | hybrid_markov_logic.hh     |
-| System F                    | Higher-order  | Bivalent or Many-Valued                   | system_f.hh                |
-
-:star2: Hybrid Markov logic supports soft equalities, soft inequalities and similarly 'soft'
-predicates.
+ConjunctionAI is a research AI library to learn and reason with clear models. ConjunctionAI
+achieves this by exploring what lies at the intersection of **classical logics**, which are used to
+formalize mathematics, encode scientific theories and complex ideas; **probability theory**, which
+is used to model uncertainty, and lastly **many-valued logic**, which are used to model vagueness
+and serves as an important theoreritcal frameworks to unique classical and probabilistic logics.
 
 ## Building
 [![Build status](https://travis-ci.org/PhDP/ConjunctionAI.svg?branch=master)](https://travis-ci.org/PhDP/ConjunctionAI)
@@ -77,8 +48,8 @@ ceres, eigen) should work on Windows, however it is currently untested.
 The project mostly follows [LLVM's style guide](https://llvm.org/docs/CodingStandards.html) with the
 following notes:
 
-* Left-to-right auto/using all the things!
-* Indention is two spaces, including namespaces. Half-indent 'private/public/protected' qualifiers.
+* auto/using all the things!
+* Indent with two spaces, including namespaces. Half-indent 'private/public/protected' qualifiers.
 
 ## License
 
