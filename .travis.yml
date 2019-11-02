@@ -19,10 +19,12 @@ before_install:
 install:
   - sudo apt-get install -qq g++-8
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
-  - # cmake/boost versions:
+  - # cmake/boost/eigen versions:
   - CMAKE_V=3.14.5
   - CMAKE_SV=${CMAKE_V::-2}
   - BOOST_V=1.70.0
+  - EIGEN_V=3.3.5
+  - EIGEN_TAR_HASH=b3f3d4950030
   - # Get and install cmake:
   - wget https://cmake.org/files/v${CMAKE_SV}/cmake-${CMAKE_V}.tar.gz
   - tar xf cmake-${CMAKE_V}.tar.gz
@@ -41,6 +43,14 @@ install:
   - ./b2 headers
   - cd $PROJECT_DIR
   - export BOOST_ROOT=$BOOST
+  - # Get and install Eigen
+  - wget https://bitbucket.org/eigen/eigen/get/${EIGEN_V}.tar.bz2
+  - tar xf ${EIGEN_V}.tar.bz2
+  - mkdir -p eigen-eigen-${EIGEN_TAR_HASH}/build && cd $_
+  - export CXX=g++-8
+  - cmake ..
+  - sudo make install
+  - cd $PROJECT_DIR
 
 script:
   - $CXX --version
