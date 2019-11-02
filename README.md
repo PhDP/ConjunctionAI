@@ -1,13 +1,10 @@
 <img src='http://phdp.github.io/images/cj-200.png' alt='Conjunction logo' align='right'/>
 
-ConjunctionAI is a research AI library to learn and reason with clear models. ConjunctionAI
-achieves this by exploring what lies at the intersection of **classical logics**, which are used to
-formalize mathematics, encode scientific theories and complex ideas; **probability theory**, which
-is used to model uncertainty, and lastly **many-valued logic**, which are used to model vagueness
-and serves as an important theoreritcal frameworks to unique classical and probabilistic logics.
+Conjunction is an experimental C++17 template library for testing ideas in fuzzy/probabilistic
+logics.
 
 ## Building
-[![Build status](https://travis-ci.org/PhDP/ConjunctionAI.svg?branch=master)](https://travis-ci.org/PhDP/ConjunctionAI)
+[![Build status](https://travis-ci.org/PhDP/Conjunction.svg?branch=master)](https://travis-ci.org/PhDP/Conjunction)
 
 The hard dependencies outside a C++17-compliant compiler are:
 
